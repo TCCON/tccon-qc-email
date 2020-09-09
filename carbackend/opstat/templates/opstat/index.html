@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TCCON Site Status Summary</title>
+</head>
+<body>
+    <h1>TCCON Site Status Summary as of {{ date }} (UTC)</h1>
+
+    {% if message %}<p><strong>{{ message }}</strong></p>{% endif %}
+
+    <table>
+        <thead>
+        <th>Site Abbreviation</th>
+        <th>Site Name</th>
+        <th>Operational?</th>
+        <th>Description/reason</th>
+        <th>Last updated by</th>
+        <th>Last updated on</th>
+        </thead>
+        <tbody>
+            {% for status in site_info %}
+            <tr>
+            <td>{{ status.siteid }}</td>
+            <td>{{ status.sitename }}</td>
+            <td>{{ status.status }}</td>
+            <td>{{ status.description }}</td>
+            <td>{{ status.username }}</td>
+            <td>{{ status.date }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

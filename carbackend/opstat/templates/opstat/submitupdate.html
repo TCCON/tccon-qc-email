@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Update {{ sitename }} status</title>
+</head>
+<body>
+    <h1>Update {{ sitename }} ({{ siteid }}) status</h1>
+
+    {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+    <form action="{% url 'opstat:update' siteid %}" method="post">
+        {% csrf_token %}
+        <label>Operational?</label>
+        <label for="opyes">Yes</label>
+        <input type="radio" id="opyes" name="status" value="y">
+        <label for="opno">No</label>
+        <input type="radio" id="opno" name="status" value="n"><br>
+
+        <label for="description">Reason (optional, max 150 chars)</label>
+        <input type="text" id="description" name="description" size="75"><br>
+
+        <input type="submit" value="Submit">
+    </form>
+</body>
+</html>

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Status update failure</title>
+</head>
+<body>
+    <h1>Problem updating {{ siteid }} status</h1>
+
+    <p>Uh oh, something went wrong on our end. Your status update has <strong>not</strong>
+    been recorded. You can <a href="{% url 'opstat:submitupdate' siteid %}">try again</a>, but
+    if this has happened before you should contact the TCCON Wiki Admin and provide them with
+    the error message below.</p>
+
+    <ul>
+        <li><a href="{% url 'opstat:submitupdate' siteid %}">Try submitting status update again</a></li>
+        <li><a href="{% url 'opstat:index' %}">Return to status overview</a> </li>
+    </ul>
+
+    <h3>Error message:</h3>
+
+    <p>{{ error }}</p>
+</body>
+</html>
