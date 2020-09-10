@@ -2,18 +2,24 @@ import traceback
 
 from django.db import transaction, Error as DBError
 from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render, get_object_or_404, redirect, reverse
+from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import timezone as tz
 from .models import SiteStatus, SiteStatusHistory
 
 
 # Create your views here.
-def index(request, addn_message=None):
+def index(request):
+    # this retrieves the value of the status parameter in the URL, e.g. /opstat/?status=needlogin
+    status = request.GET.get('status', None)
+    print('status =', status)
     site_info = SiteStatus.objects.all()
     context = {'site_info': site_info, 'date': tz.now(), 'user': request.user}
-    if addn_message:
-        context['message'] = addn_message
+    if status == 'goodupdate':
+        updated_site = request.GET.get('site', '')
+        context['message'] = '{} successfully updated'.format(updated_site)
+    elif status == 'needlogin':
+        context['message'] = 'You must log in to update a site status'
     return render(request, 'opstat/index.html', context=context)
 
 
@@ -30,6 +36,10 @@ def car(request):
 
 
 def submitupdate(request, site_id, error_message=None):
+    #import pdb; pdb.set_trace()
+    if not request.user.is_authenticated:
+        url = '{}?status=needlogin'.format(reverse('opstat:index'))
+        return redirect(url)
     curr_info = get_object_or_404(SiteStatus, pk=site_id)
     context = {'sitename': curr_info.sitename, 'siteid': curr_info.siteid}
     if error_message:
@@ -38,6 +48,9 @@ def submitupdate(request, site_id, error_message=None):
 
 
 def update(request, site_id):
+    if not request.user.is_authenticated:
+        url = '{}?status=needlogin'.format(reverse('opstat:index'))
+        return redirect(url)
     site_info = get_object_or_404(SiteStatus, pk=site_id)
     status = request.POST.get('status', None)
     description = request.POST.get('description', '')
@@ -64,8 +77,5 @@ def update(request, site_id):
         context = {'siteid': site_id, 'error': traceback.format_exception_only(type(err), err)[-1].strip()}
         return render(request, 'opstat/updatefailed.html', context=context)
     else:
-        return HttpResponseRedirect(reverse('opstat:updatesuccessful'))
-
-
-def updatesuccessful(request):
-    return index(request, addn_message='Status successfully updated')
+        url = '{}?status=goodupdate&site={}'.format(reverse('opstat:index'), site_info.sitename)
+        return HttpResponseRedirect(url)

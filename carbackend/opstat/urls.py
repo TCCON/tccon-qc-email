@@ -7,5 +7,4 @@ urlpatterns = [
     path('car', views.car, name='car'),
     path('update/<str:site_id>', views.update, name='update'),
     path('submitupdate/<str:site_id>', views.submitupdate, name='submitupdate'),
-    path('success', views.updatesuccessful, name='updatesuccessful'),
 ]
