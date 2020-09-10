@@ -7,10 +7,19 @@
 <body>
     <h1>TCCON Site Status Summary as of {{ date }} (UTC)</h1>
 
+    {% if user.is_authenticated %}
+    <p>You are logged in as <strong>{{ user.get_username }}</strong>.<br>
+       <a href="{% url 'logout' %}?next={% url 'opstat:index' %}">Log out</a></p>
+    {% else %}
+    <p>You are not logged in.<br>
+       <a href="{% url 'login' %}?next={% url 'opstat:index' %}">Log in.</a></p>
+    {% endif %}
+
     {% if message %}<p><strong>{{ message }}</strong></p>{% endif %}
 
     <table>
         <thead>
+        <th></th>
         <th>Site Abbreviation</th>
         <th>Site Name</th>
         <th>Operational?</th>
@@ -21,6 +30,7 @@
         <tbody>
             {% for status in site_info %}
             <tr>
+            <td><a href="{% url 'opstat:submitupdate' site_id=status.siteid %}">Update</a></td>
             <td>{{ status.siteid }}</td>
             <td>{{ status.sitename }}</td>
             <td>{{ status.status }}</td>

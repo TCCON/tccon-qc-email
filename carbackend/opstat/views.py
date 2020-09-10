@@ -2,7 +2,7 @@ import traceback
 
 from django.db import transaction, Error as DBError
 from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect, reverse
 from django.urls import reverse
 from django.utils import timezone as tz
 from .models import SiteStatus, SiteStatusHistory
@@ -11,7 +11,7 @@ from .models import SiteStatus, SiteStatusHistory
 # Create your views here.
 def index(request, addn_message=None):
     site_info = SiteStatus.objects.all()
-    context = {'site_info': site_info, 'date': tz.now()}
+    context = {'site_info': site_info, 'date': tz.now(), 'user': request.user}
     if addn_message:
         context['message'] = addn_message
     return render(request, 'opstat/index.html', context=context)
