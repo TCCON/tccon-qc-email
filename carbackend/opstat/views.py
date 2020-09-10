@@ -59,6 +59,7 @@ def update(request, site_id):
         return submitupdate(request, site_id, error_message='You must choose an option for the "Operational?" query')
 
     now = tz.now()
+    username = request.user.get_username()
     try:
         # Update the status table and the history table at the same time. If something goes wrong, roll back those
         # changes that have already been executed. This *should* keep the two in sync. Also let the user know that
@@ -70,9 +71,10 @@ def update(request, site_id):
             site_info.status = status
             site_info.description = description
             site_info.date = now
+            site_info.username = username
             site_info.save()
 
-            new_hist = SiteStatusHistory(site=site_info, date=now, status=status, description=description)
+            new_hist = SiteStatusHistory(site=site_info, date=now, status=status, description=description, username=username)
             new_hist.save()
     except DBError as err:
         context = {'siteid': site_id, 'error': traceback.format_exception_only(type(err), err)[-1].strip()}
