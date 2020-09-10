@@ -11,6 +11,7 @@ from .models import SiteStatus, SiteStatusHistory
 # Create your views here.
 def index(request):
     # this retrieves the value of the status parameter in the URL, e.g. /opstat/?status=needlogin
+    # https://www.dev2qa.com/how-to-pass-multiple-parameters-via-url-in-django/
     status = request.GET.get('status', None)
     print('status =', status)
     site_info = SiteStatus.objects.all()

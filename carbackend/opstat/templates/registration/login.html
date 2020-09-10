@@ -36,5 +36,7 @@
     <input type="submit" value="login">
     <input type="hidden" name="next" value="{{ next }}">
     </form>
+
+    <p><a href="{% url 'password_reset' %}?next={% url 'opstat:index' %}">Lost password?</a></p>
 </body>
 </html>
