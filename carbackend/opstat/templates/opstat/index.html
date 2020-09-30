@@ -17,12 +17,12 @@
        <a href="{% url 'login' %}?next={% url 'opstat:index' %}">Log in.</a></p>
     {% endif %}
 
-
+    <p>You can access the machine parsable version <a href="{% url 'opstat:car' %}">here</a></p>
 
     <table>
         <thead>
         <th></th>
-        <th>Site Abbreviation</th>
+        <th>Site ID</th>
         <th>Site Name</th>
         <th>Operational?</th>
         <th>Description/reason</th>
