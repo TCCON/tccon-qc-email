@@ -35,7 +35,7 @@
             <td><a href="{% url 'opstat:submitupdate' site_id=status.siteid %}">Update</a></td>
             <td>{{ status.siteid }}</td>
             <td>{{ status.sitename }}</td>
-            <td>{{ status.status }}</td>
+            <td>{{ status.pretty_status }}</td>
             <td>{{ status.description }}</td>
             <td>{{ status.username }}</td>
             <td>{{ status.date }}</td>

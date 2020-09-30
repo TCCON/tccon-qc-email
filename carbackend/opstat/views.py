@@ -28,8 +28,12 @@ def car(request):
     site_info = SiteStatus.objects.all()
     lines = []
     for info in site_info:
+        if info.status == 'r':
+            # Do not display "retired" sites by default
+            continue
+
         s = '{name}::{status}::{descr} [{user} {date}]'.format(
-            name=info.sitename, status=info.status, descr=info.description, user=info.username, date=info.date.strftime('%Y%m%d')
+            name=info.sitename, status=info.pretty_status, descr=info.description, user=info.username, date=info.date.strftime('%Y%m%d')
         )
         lines.append(s)
     data = '\n'.join(lines)
