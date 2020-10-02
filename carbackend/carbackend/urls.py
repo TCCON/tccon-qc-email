@@ -15,9 +15,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.shortcuts import redirect
+
+def _redirect_index(request):
+    return redirect('opstat/')
 
 urlpatterns = [
     path('opstat/', include('opstat.urls')),
+    path('', _redirect_index),
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
 ]
