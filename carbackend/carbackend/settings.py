@@ -20,12 +20,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'c=7zkf@c#(8ffy_8blas$frx*f53uqrv$hlsq$%2%2&19wsqyw'
+# SECRET_KEY = 'c=7zkf@c#(8ffy_8blas$frx*f53uqrv$hlsq$%2%2&19wsqyw'
+with open('/var/www/car/info/key.txt') as f:
+    SECRET_KEY = f.read().strip()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['parkfalls.gps.caltech.edu']
 
 
 # Application definition
@@ -120,4 +122,27 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = '/carstatic/'
+STATIC_ROOT = '/var/www/car/static/'
+
+DEFAULT_FROM_EMAIL = 'sitestatus@parkfalls.gps.caltech.edu'
+SERVER_EMAIL = 'sitestatusadmin@parkfalls.gps.caltech.edu'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gps.caltech.edu'
+EMAIL_PORT = 25
+EMAIL_HOST_USER = None
+EMAIL_HOST_PASSWORD = None
+EMAIL_USE_TLS = None
+EMAIL_USE_SSL = None
+EMAIL_SSL_KEYFILE = None
+EMAIL_TIMEOUT = None
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': '/var/www/car/cache/',
+    }
+}
+
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
