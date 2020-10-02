@@ -80,7 +80,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'OPTIONS': {
-            'read_default_file': str(BASE_DIR / 'maria.cnf'),
+            'read_default_file': '/var/www/car/info/maria.cnf',
         }
     }
 }
