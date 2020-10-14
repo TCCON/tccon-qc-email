@@ -13,6 +13,7 @@ def index(request):
     # this retrieves the value of the status parameter in the URL, e.g. /opstat/?status=needlogin
     # https://www.dev2qa.com/how-to-pass-multiple-parameters-via-url-in-django/
     status = request.GET.get('status', None)
+    site_id = request.GET.get('site', None)
     print('status =', status)
     site_info = SiteStatus.objects.all()
     context = {'site_info': site_info, 'date': tz.now(), 'user': request.user}
@@ -21,6 +22,8 @@ def index(request):
         context['message'] = '{} successfully updated'.format(updated_site)
     elif status == 'needlogin':
         context['message'] = 'You must log in to update a site status'
+    elif status == 'missingperm':
+        context['message'] = 'You do not have permission to update {} site status'.format(site_id)
     return render(request, 'opstat/index.html', context=context)
 
 
@@ -42,8 +45,12 @@ def car(request):
 
 def submitupdate(request, site_id, error_message=None):
     #import pdb; pdb.set_trace()
+    req_perm = 'opstat.{}_status'.format(site_id)
     if not request.user.is_authenticated:
         url = '{}?status=needlogin'.format(reverse('opstat:index'))
+        return redirect(url)
+    elif not request.user.has_perm(req_perm):
+        url = '{}?status=missingperm&site={}'.format(reverse('opstat:index'), site_id)
         return redirect(url)
     curr_info = get_object_or_404(SiteStatus, pk=site_id)
     context = {'sitename': curr_info.sitename, 'siteid': curr_info.siteid}
