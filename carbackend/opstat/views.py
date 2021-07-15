@@ -5,7 +5,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import timezone as tz
-from .models import SiteStatus, SiteStatusHistory
+from .models import SiteStatus, SiteStatusHistory, PageNews
 
 
 # Create your views here.
@@ -14,9 +14,16 @@ def index(request):
     # https://www.dev2qa.com/how-to-pass-multiple-parameters-via-url-in-django/
     status = request.GET.get('status', None)
     site_id = request.GET.get('site', None)
-    print('status =', status)
     site_info = SiteStatus.objects.all()
-    context = {'site_info': site_info, 'date': tz.now(), 'user': request.user}
+
+    # Get the newest page news, check if we should show it
+    news = PageNews.objects.last()
+    if news is None:
+        show_news = False
+    else:
+        show_news = (news.display == PageNews.DISPLAY_ALWAYS) or (news.display == PageNews.DISPLAY_UNTIL and tz.now().date() < news.hide_after)
+
+    context = {'site_info': site_info, 'date': tz.now(), 'user': request.user, 'show_news': show_news, 'news': news}
     if status == 'goodupdate':
         updated_site = request.GET.get('site', '')
         context['message'] = '{} successfully updated'.format(updated_site)

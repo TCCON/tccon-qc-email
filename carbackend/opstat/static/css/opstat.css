@@ -86,3 +86,34 @@ td {
     width: 100%;
     text-align: center;
 }
+
+.news {
+    width: 90%;
+    margin: 0 auto;
+    color: #333333;
+    font-family: "Helvetica Neue",Arial,sans-serif;
+    font-size: 16px;
+    font-weight: 300;
+    line-height: 1.5625;
+    border: 2px solid black;
+}
+
+.news .head {
+    background-color: #ffad73;
+    text-align: center;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-bottom: 1px solid black;
+}
+
+.news .msg {
+    background-color: #ffd15e;
+    padding: 5px 10px;
+}
+
+.news .author {
+    background-color: #fff8e8;
+    text-align: right;
+    font-weight: 600;
+    padding: 10px 30px 5px 5px;
+}

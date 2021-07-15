@@ -9,6 +9,14 @@
 <body>
     <h1>TCCON Site Status Summary as of {{ date }} (UTC)</h1>
 
+    {% if show_news %}
+    <div class="news">
+        <div class="head">News about this page</div>
+        <div class="msg">{{ news.message }}</div>
+        <div class="author">-- {{ news.author }}, {{ news.date }} UTC</div>
+    </div>
+    {% endif %}
+
     {% if message %}<p><strong>{{ message }}</strong></p>{% endif %}
 
     {% if user.is_authenticated %}

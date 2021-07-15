@@ -20,6 +20,7 @@ class SiteStatus(models.Model):
     description = models.CharField(max_length=150, null=True)
 
     class Meta:
+        verbose_name_plural = 'site statuses'
         permissions = [
             ("ae_status", "Can update the Ascension Island site status"),
             ("an_status", "Can update the Anmyeondo site status"),
@@ -67,6 +68,8 @@ class SiteStatus(models.Model):
 
 
 class SiteStatusHistory(models.Model):
+    class Meta:
+        verbose_name_plural = 'site status history'
     site = models.ForeignKey(SiteStatus, on_delete=models.PROTECT)
     username = models.CharField(max_length=30, null=True)
     date = models.DateTimeField(null=True)
@@ -76,3 +79,23 @@ class SiteStatusHistory(models.Model):
     @property
     def pretty_status(self):
         return _format_status(self.status)
+
+
+class PageNews(models.Model):
+    class Meta:
+        verbose_name_plural = 'page news'
+
+    DISPLAY_ALWAYS = 'ALWAYS'
+    DISPLAY_NEVER = 'NEVER'
+    DISPLAY_UNTIL = 'UNTIL'
+    DISPLAY_CHOICES = [
+        (DISPLAY_UNTIL, 'Show until "hide after" date'),
+        (DISPLAY_ALWAYS, 'Always show'),
+        (DISPLAY_NEVER, 'Never show')
+    ]
+
+    message = models.TextField()
+    author = models.CharField(max_length=64)
+    date = models.DateTimeField(auto_now=True)
+    hide_after = models.DateField(null=True)
+    display = models.CharField(max_length=8, choices=DISPLAY_CHOICES, default=DISPLAY_UNTIL)

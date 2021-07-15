@@ -5,3 +5,4 @@ from . import models
 # May remove these in production?
 admin.site.register(models.SiteStatus)
 admin.site.register(models.SiteStatusHistory)
+admin.site.register(models.PageNews)
