@@ -1,0 +1,88 @@
+/* Used "Legacy" from https://wdexplorer.com/20-examples-beautiful-css-typography-design/
+   as a starting point. */
+
+a,a:visited {
+    color: #93291b;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+a:hover {
+    text-decoration: underline
+}
+
+h1 {
+    font-family: 'Enriqueta', arial, serif;
+    line-height: 1.25;
+    margin: 0 0 10px;
+    font-size: 40px;
+    font-weight: bold;
+}
+
+h1 a,
+
+h1 a:visited {
+    color: #333333
+}
+
+h1 a:hover {
+    color: #93291b;
+    text-decoration: none;
+}
+
+p {
+    color: #333333;
+    font-family: "Helvetica Neue",Arial,sans-serif;
+    font-size: 16px;
+    font-weight: 300;
+    line-height: 1.5625;
+    margin-bottom: 15px;
+}
+
+th {
+    color: #333333;
+    font-family: "Helvetica Neue",Arial,sans-serif;
+    font-size: 16px;
+    line-height: 1.5625;
+}
+
+td {
+    color: #333333;
+    font-family: "Helvetica Neue",Arial,sans-serif;
+    font-size: 16px;
+    font-weight: 300;
+    line-height: 1.5625;
+}
+
+.pretty-table {
+    border-collapse: collapse;
+    border-top: 10px;
+    margin: 0 auto;
+}
+
+.pretty-table tr:nth-child(odd) {
+    background-color: #ffd15e;
+}
+
+.pretty-table tr:nth-child(even) {
+    background-color: #fff8e8;
+}
+
+.pretty-table td {
+    padding: 10px;
+}
+
+.pretty-table th {
+    background-color: #ffad73;
+    border-top: 2px solid black;
+    border-bottom: 2px solid black;
+}
+
+.pretty-table tr:last-child {
+    border-bottom: 2px solid black;
+}
+
+.cr {
+    width: 100%;
+    text-align: center;
+}

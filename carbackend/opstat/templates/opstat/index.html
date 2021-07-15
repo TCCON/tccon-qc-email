@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>TCCON Site Status Summary</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/opstat.css' %}">
 </head>
 <body>
     <h1>TCCON Site Status Summary as of {{ date }} (UTC)</h1>
@@ -19,7 +21,7 @@
 
     <p>You can access the machine parsable version <a href="{% url 'opstat:car' %}">here</a></p>
 
-    <table>
+    <table class="pretty-table">
         <thead>
         <th></th>
         <th></th>

@@ -3,24 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <title>Update {{ sitename }} status</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/opstat.css' %}">
 </head>
 <body>
-    <h1>Update {{ sitename }} ({{ siteid }}) status</h1>
+    <div class="cr"><h1>Update {{ sitename }} ({{ siteid }}) status</h1></div>
 
     {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
 
+    <br>
+
     <form action="{% url 'opstat:update' siteid %}" method="post">
         {% csrf_token %}
-        <label>Operational?</label>
-        <label for="opyes">Yes</label>
-        <input type="radio" id="opyes" name="status" value="y">
-        <label for="opno">No</label>
-        <input type="radio" id="opno" name="status" value="n"><br>
+        <div class="cr">
+        <table class="pretty-table">
+            <tr>
+            <th>Enter the current status</th>
+            </tr>
+            <tr>
+            <td><label>Operational?</label>
+                <label for="opyes">Yes</label>
+                <input type="radio" id="opyes" name="status" value="y">
+                <label for="opno">No</label>
+                <input type="radio" id="opno" name="status" value="n"></td>
+            </tr>
 
-        <label for="description">Reason (optional, max 150 chars)</label>
-        <input type="text" id="description" name="description" size="75"><br>
+            <tr>
+            <td><label for="description">Reason (optional, max 150 chars)</label>
+                <input type="text" id="description" name="description" size="75"></td>
+            </tr>
 
-        <input type="submit" value="Submit">
+            <tr>
+            <td><input type="submit" value="Submit"></td>
+            </tr>
+        </table>
+        </div>
     </form>
+
 </body>
 </html>

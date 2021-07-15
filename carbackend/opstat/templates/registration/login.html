@@ -3,40 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <title>Login to TCCON site status</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/opstat.css' %}">
 </head>
 <body>
-    <h1>Login to TCCON site status pages</h1>
+    <div class="cr">
+        <h1>Login to TCCON site status pages</h1>
 
-    {% if form.errors %}
-    <p>Your username and password didn't match. Please try again.</p>
-    {% endif %}
-
-    {% if next %}
-        {% if user.is_authenticated %}
-        <p>Your account doesn't have access to this page. To proceed,
-        please login with an account that has access.</p>
-        {% else %}
-        <p>Please login to see this page.</p>
+        {% if form.errors %}
+        <p>Your username and password didn't match. Please try again.</p>
         {% endif %}
-    {% endif %}
 
-    <form method="post" action="{% url 'login' %}">
-    {% csrf_token %}
-    <table>
-    <tr>
-        <td>{{ form.username.label_tag }}</td>
-        <td>{{ form.username }}</td>
-    </tr>
-    <tr>
-        <td>{{ form.password.label_tag }}</td>
-        <td>{{ form.password }}</td>
-    </tr>
-    </table>
+        {% if next %}
+            {% if user.is_authenticated %}
+            <p>Your account doesn't have access to this page. To proceed,
+            please login with an account that has access.</p>
+            {% else %}
+            <p>Please login to see this page.</p>
+            {% endif %}
+        {% endif %}
 
-    <input type="submit" value="login">
-    <input type="hidden" name="next" value="{{ next }}">
-    </form>
 
-    <p><a href="{% url 'password_reset' %}?next={% url 'opstat:index' %}">Lost password?</a></p>
+        <form method="post" action="{% url 'login' %}">
+        {% csrf_token %}
+        <table class="pretty-table">
+        <tr>
+            <th colspan="2">Login</th>
+        </tr>
+        <tr>
+            <td>{{ form.username.label_tag }}</td>
+            <td>{{ form.username }}</td>
+        </tr>
+        <tr>
+            <td>{{ form.password.label_tag }}</td>
+            <td>{{ form.password }}</td>
+        </tr>
+
+        <tr>
+            <td colspan="2"><input type="submit" value="login">
+                <input type="hidden" name="next" value="{{ next }}"></td>
+        </tr>
+        </table>
+        </form>
+        <p><a href="{% url 'password_reset' %}?next={% url 'opstat:index' %}">Lost password?</a></p>
+    </div>
 </body>
 </html>
