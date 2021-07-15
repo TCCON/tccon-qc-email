@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TCCON {{ sitename }} status history</title>
+</head>
+<body>
+    <h1>Status history for {{ sitename }}</h1>
+
+    <p><a href="{% url 'opstat:index' %}">Back to main page</a></p>
+
+    <p>
+    {% if oldest_first %}
+    <a href="{% url 'opstat:history' site_id=site %}?order=newest">Switch to newest first</a>
+    {% else %}
+    <a href="{% url 'opstat:history' site_id=site %}?order=oldest">Switch to oldest first</a>
+    {% endif %}
+    </p>
+
+    <table>
+        <tr>
+            <th>Date</th>
+            <th>Operational?</th>
+            <th>Description/reason</th>
+            <th>Last updated by</th>
+        </tr>
+        {% for status in statuses %}
+        <tr>
+            <td>{{ status.date }}</td>
+            <td>{{ status.pretty_status }}</td>
+            <td>{{ status.description }}</td>
+            <td>{{ status.username }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

@@ -1,2 +1,3 @@
 env/
+carbackend/carbackend/settings_local.py
 *.pyc

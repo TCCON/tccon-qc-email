@@ -43,6 +43,15 @@ def car(request):
     return HttpResponse(data.encode('utf8'), content_type='text/plain')
 
 
+def history(request, site_id):
+    order = request.GET.get('order', 'newest')
+    order_by = 'date' if order == 'oldest' else '-date'
+    statuses = SiteStatusHistory.objects.filter(site=site_id).order_by(order_by)
+    info = SiteStatus.objects.get(siteid=site_id)
+    context = {'site': site_id, 'sitename': info.sitename, 'statuses': statuses, 'oldest_first': order == 'oldest'}
+    return render(request, 'opstat/site_history.html', context=context)
+
+
 def submitupdate(request, site_id, error_message=None):
     #import pdb; pdb.set_trace()
     req_perm = 'opstat.{}_status'.format(site_id)
