@@ -22,6 +22,7 @@ def _redirect_index(request):
 
 urlpatterns = [
     path('opstat/', include('opstat.urls')),
+    path('siteinfo/', include('siteinfo.urls')),
     path('', _redirect_index),
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),

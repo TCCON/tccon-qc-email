@@ -34,6 +34,7 @@ ALLOWED_HOSTS = ['parkfalls.gps.caltech.edu']
 
 INSTALLED_APPS = [
     'opstat.apps.OpstatConfig',
+    'siteinfo.apps.SiteinfoConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

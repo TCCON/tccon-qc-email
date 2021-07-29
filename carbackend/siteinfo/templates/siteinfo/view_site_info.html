@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Public metadata for {{ site_id }}</title>
+</head>
+<body>
+    <ul>
+      {% for k, v in info.items %}
+      <li>{{ k }}: {{ v }}</li>
+      {% endfor %}
+    </ul>
+</body>
+</html>
