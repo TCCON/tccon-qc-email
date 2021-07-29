@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TCCON public metadata - landing page</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/opstat.css' %}">
+</head>
+<body>
+
+    <table class="pretty-table">
+        <tr><th>Site ID</th><th>Site Name</th><th></th><th></th></tr>
+        {% for site in sites %}
+        <tr>
+            <td>{{ site.id }}</td>
+            <td>{{ site.name }}</td>
+            <td><a href="{% url 'siteinfo:view' site.id %}">View</a></td>
+            <td>Edit</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+</body>
+</html>

@@ -3,12 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <title>Public metadata for {{ site_id }}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/opstat.css' %}">
 </head>
 <body>
-    <ul>
-      {% for k, v in info.items %}
-      <li>{{ k }}: {{ v }}</li>
-      {% endfor %}
-    </ul>
+    <h1>Public metadata for {{ info.long_name }} ({{ site_id }})</h1>
+
+    <table class="pretty-table">
+        <tr><th>Field</th><th></th><th>Value</th></tr>
+        {% for k, v in info.items %}
+        <tr>
+            <td>{{ k }}</td>
+            <td></td>
+            <td>{{ v }}</td>
+        </tr>
+        {% endfor %}
+    </table>
 </body>
 </html>
