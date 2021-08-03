@@ -4,6 +4,7 @@ from django.views import View
 from django.shortcuts import render
 
 import json
+import re
 
 
 class SiteInfoList(View):
@@ -11,10 +12,33 @@ class SiteInfoList(View):
         with open(settings.SITE_INFO_FILE) as f:
             all_site_info = json.load(f)
 
-        sites = [{'id': k, 'name': v['long_name']} for k, v in all_site_info.items()]
+        sites_can_edit = self.get_sites_can_edit(request.user)
+        print(sites_can_edit)
+
+        sites = [{'id': k, 'name': v['long_name'], 'can_edit': k in sites_can_edit} for k, v in all_site_info.items()]
         sites.sort(key=lambda s: s['id'])
-        # TODO: limit which sites have the "edit" link active based on user permissions
-        return render(request, 'siteinfo/site_list.html', context={'sites': sites})
+
+        sites_can_edit = [s for s in sites if s['can_edit']]
+        sites_cannot_edit = [s for s in sites if not s['can_edit']]
+
+        context = {
+            'user': request.user,
+            'sites_can_edit': sites_can_edit,
+            'sites_cannot_edit': sites_cannot_edit,
+            'has_sites': len(sites_can_edit) > 0
+        }
+
+        return render(request, 'siteinfo/site_list.html', context=context)
+
+    @staticmethod
+    def get_sites_can_edit(user):
+        permissions = user.get_all_permissions()
+        sites = set()
+        for perm in permissions:
+            match = re.match(r'opstat.([a-z]{2})_status', perm)
+            if match:
+                sites.add(match.group(1))
+        return sites
 
 
 # Create your views here.

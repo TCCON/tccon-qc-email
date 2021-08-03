@@ -8,14 +8,43 @@
 </head>
 <body>
 
+    {% if user.is_authenticated %}
+    <p>You are logged in as <strong>{{ user.get_username }}</strong>.<br>
+       <a href="{% url 'logout' %}?next={% url 'siteinfo:index' %}">Log out</a></p>
+    {% else %}
+    <p>You are not logged in.<br>
+       <a href="{% url 'login' %}?next={% url 'siteinfo:index' %}">Log in.</a></p>
+    {% endif %}
+
+
     <table class="pretty-table">
-        <tr><th>Site ID</th><th>Site Name</th><th></th><th></th></tr>
-        {% for site in sites %}
+        {% if has_sites %}
+        <tr><th colspan="3">Your sites</th></tr>
+        <tr><th>Site ID</th><th>Site Name</th><th>Public metadata</th></tr>
+        {% for site in sites_can_edit %}
         <tr>
             <td>{{ site.id }}</td>
             <td>{{ site.name }}</td>
-            <td><a href="{% url 'siteinfo:view' site.id %}">View</a></td>
-            <td>Edit</td>
+            <!--<td><a href="{% url 'siteinfo:view' site.id %}">View</a></td>-->
+            <td class="centered">
+                <form action="{% url 'siteinfo:view' site.id %}"><button type="submit" class="link-button">View</button></form>
+                <form action=""><button type="submit" class="link-button">Edit</button></form>
+            </td>
+        </tr>
+        {% endfor %}
+
+        <tr><td colspan="3" class="spacer"></td></tr>
+        <tr><th colspan="3">Other sites</th></tr>
+        {% endif %}
+
+        <tr><th>Site ID</th><th>Site Name</th><th>Public metadata</th></tr>
+        {% for site in sites_cannot_edit %}
+        <tr>
+            <td>{{ site.id }}</td>
+            <td>{{ site.name }}</td>
+            <td class="centered">
+                <form action="{% url 'siteinfo:view' site.id %}"><button type="submit" class="link-button">View</button></form>
+            </td>
         </tr>
         {% endfor %}
     </table>

@@ -82,6 +82,32 @@ td {
     border-bottom: 2px solid black;
 }
 
+.pretty-table .spacer {
+    background-color: #ffffff;
+    border-top: 2px solid black;
+}
+
+.link-button {
+    color: #333333;
+    background-color: #ffad73;
+    padding: 0.25em 1em;
+    border-radius: 8px;
+    font-family: "Helvetica Neue",Arial,sans-serif;
+    font-size: 16px;
+    font-weight: 300;
+    line-height: 1.5625;
+    transition-duration: 0.4s;
+    cursor: pointer;
+}
+
+.link-button:hover {
+    background-color: #ffffff;
+}
+
+.centered {
+    text-align: center;
+}
+
 .cr {
     width: 100%;
     text-align: center;
