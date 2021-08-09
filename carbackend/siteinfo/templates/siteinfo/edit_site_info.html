@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit public metadata for {{ site_id }}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/opstat.css' %}">
+</head>
+<body>
+    <h1>Edit public metadata for {{ long_name }} ({{ site_id }})</h1>
+
+    <table class="pretty-table form-table">
+        <tr><td colspan="2" class="header">
+            These fields cannot be edited here because they are expected to be persistent.
+            Contact Caltech if they require updating.</td></tr>
+        {% for field, info in fixed_values.items %}
+        <tr><th>{{ info.name }}</th><td class="fixed">{{ info.value }}</td></tr>
+        {% endfor %}
+
+        <tr><td colspan="2" class="spacer"></td> </tr>
+        <tr><td colspan="2" class="header">
+            These fields may be edited; note that they will not propagate to the public files
+            until those files are next regenerated.</td> </tr>
+        {{ form.as_table }}
+    </table>
+
+    <br>
+    <div class="cr">
+        <form action="{% url 'siteinfo:index' %}"><button type="submit" class="link-button">Back to main</button></form>
+    </div>
+</body>
+</html>

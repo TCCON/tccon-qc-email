@@ -28,7 +28,7 @@
             <!--<td><a href="{% url 'siteinfo:view' site.id %}">View</a></td>-->
             <td class="centered">
                 <form action="{% url 'siteinfo:view' site.id %}"><button type="submit" class="link-button">View</button></form>
-                <form action=""><button type="submit" class="link-button">Edit</button></form>
+                <form action="{% url 'siteinfo:edit' site.id %}"><button type="submit" class="link-button">Edit</button></form>
             </td>
         </tr>
         {% endfor %}
