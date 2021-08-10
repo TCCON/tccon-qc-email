@@ -3,6 +3,7 @@ from django.http import Http404
 from django.views import View
 from django.shortcuts import render
 
+from datetime import datetime as dt
 import json
 import re
 
@@ -99,3 +100,45 @@ class EditSiteInfo(View):
         field = field.replace('_', ' ').capitalize()
         field = re.sub(r'\b[Dd][Oo][Ii]\b', 'DOI', field)
         return field
+
+
+class ViewReleaseFlags(View):
+    def get(self, request, site_id):
+        user = request.user
+
+        with open(settings.SITE_INFO_FILE) as f:
+            all_info = json.load(f)
+            long_name = all_info.get(site_id, dict()).get('long_name', '?')
+        with open(settings.RELEASE_FLAGS_FILE) as f:
+            all_flags = json.load(f)
+        with open(settings.RELEASE_FLAGS_DEF_FILE) as f:
+            flag_defs = {v: k for k, v in json.load(f)['definitions'].items()}
+
+        site_flags = []
+        for k, v in all_flags.items():
+            if not k.startswith(site_id):
+                continue
+
+            _, n, start_str, end_str = k.split('_')
+            flag_value = v['value']
+            v.setdefault('name', flag_defs[flag_value])
+            v.setdefault('comment', '')
+
+            meta = dict()
+            meta['n'] = n
+            meta['start_date'] = dt.strptime(start_str, '%Y%m%d').date()
+            meta['end_date'] = dt.strptime(end_str, '%Y%m%d').date()
+
+            site_flags.append({'info': v, 'meta': meta})
+
+        site_flags.sort(key=lambda el: el['meta']['n'])
+
+        context = {
+            'site_id': site_id,
+            'long_name': long_name,
+            'has_flags': len(site_flags) > 0,
+            'flags': site_flags
+        }
+
+        return render(request, 'siteinfo/view_release_flags.html', context=context)
+

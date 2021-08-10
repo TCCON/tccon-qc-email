@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Release flags for {{ site_id }}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/opstat.css' %}">
+</head>
+<body>
+    <h1>Release flags for {{ long_name }} ({{ site_id }})</h1>
+
+    {% if has_flags %}
+    <table class="pretty-table">
+        <tr><th></th> <th>Start date</th> <th>End date</th> <th>Flag code</th> <th>Flag name</th> <th>Comment</th></tr>
+        {% for flag in flags %}
+        <tr>
+            <th>{{ flag.meta.n }}</th>
+            <td>{{ flag.meta.start_date }}</td>
+            <td>{{ flag.meta.end_date }}</td>
+            <td>{{ flag.info.value }}</td>
+            <td>{{ flag.info.name }}</td>
+            <td>{{ flag.info.comment }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <div class="cr">No release flags for this site.</div>
+    {% endif %}
+
+    <br>
+    <div class="cr">
+        <form action="{% url 'siteinfo:index' %}"><button type="submit" class="link-button">Back to main</button></form>
+    </div>
+</body>
+</html>

@@ -19,8 +19,8 @@
 
     <table class="pretty-table">
         {% if has_sites %}
-        <tr><th colspan="3">Your sites</th></tr>
-        <tr><th>Site ID</th><th>Site Name</th><th>Public metadata</th></tr>
+        <tr><th colspan="4">Your sites</th></tr>
+        <tr><th>Site ID</th><th>Site Name</th><th>Public metadata</th><th>Release flags</th></tr>
         {% for site in sites_can_edit %}
         <tr>
             <td>{{ site.id }}</td>
@@ -30,20 +30,26 @@
                 <form action="{% url 'siteinfo:view' site.id %}"><button type="submit" class="link-button">View</button></form>
                 <form action="{% url 'siteinfo:edit' site.id %}"><button type="submit" class="link-button">Edit</button></form>
             </td>
+            <td class="centered">
+                <form action="{% url 'siteinfo:flags' site.id %}"><button type="submit" class="link-button">View</button></form>
+            </td>
         </tr>
         {% endfor %}
 
-        <tr><td colspan="3" class="spacer"></td></tr>
-        <tr><th colspan="3">Other sites</th></tr>
+        <tr><td colspan="4" class="spacer"></td></tr>
+        <tr><th colspan="4">Other sites</th></tr>
         {% endif %}
 
-        <tr><th>Site ID</th><th>Site Name</th><th>Public metadata</th></tr>
+        <tr><th>Site ID</th><th>Site Name</th><th>Public metadata</th><th>Release flags</th></tr>
         {% for site in sites_cannot_edit %}
         <tr>
             <td>{{ site.id }}</td>
             <td>{{ site.name }}</td>
             <td class="centered">
                 <form action="{% url 'siteinfo:view' site.id %}"><button type="submit" class="link-button">View</button></form>
+            </td>
+            <td class="centered">
+                <form action="{% url 'siteinfo:flags' site.id %}"><button type="submit" class="link-button">View</button></form>
             </td>
         </tr>
         {% endfor %}
