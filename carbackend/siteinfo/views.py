@@ -1,14 +1,16 @@
 from django.conf import settings
+from django.db import transaction
 from django.http import Http404
 from django.views import View
-from django.shortcuts import render
+from django.shortcuts import render, reverse, HttpResponseRedirect
 
 from datetime import datetime as dt
 import json
 import re
 
 from .forms import SiteInfoUpdateForm
-from .models import SiteInfoUpdate
+from .models import SiteInfoUpdate, InfoFileLocks
+from . import utils
 
 
 class SiteInfoList(View):
@@ -75,17 +77,54 @@ class EditSiteInfo(View):
             # TODO: replace
             raise Http404('You cannot edit this site!')
 
-        with open(settings.SITE_INFO_FILE) as f:
-            all_site_info = json.load(f)
+        site_info = self._get_site_info(site_id)
+        form = SiteInfoUpdateForm(initial=site_info)
+        context = self._make_context(form, site_id, site_info)
+        return render(request, 'siteinfo/edit_site_info.html', context=context)
 
+    def post(self, request, site_id):
+        form = SiteInfoUpdateForm(request.POST)
+        if form.is_valid():
+            # form.save(user=request.user, site_info=self._get_site_info(site_id))
+            site_info = self._get_site_info(site_id)
+            update = form.save(commit=False)
+            update.user_updated = request.user
+            update.site_id = site_id
+            for field in form.fixed_fields():
+                setattr(update, field, site_info[field])
+
+            with transaction.atomic():
+                self._write_site_info(update, site_id)
+                update.save()
+            return HttpResponseRedirect(reverse('siteinfo:index'))
+        else:
+            print('Form not valid')
+            context = self._make_context(form, site_id)
+            return render(request, 'siteinfo/edit_site_info.html', context=context)
+
+    @staticmethod
+    def _get_site_info(site_id):
+        all_site_info = InfoFileLocks.read_json_file(settings.SITE_INFO_FILE)
         try:
-            site_info = all_site_info[site_id]
+            return all_site_info[site_id]
         except KeyError:
             raise Http404('No existing site information for site "{}"'.format(site_id))
 
-        form = SiteInfoUpdateForm(initial=site_info)
-        form_fields = set(SiteInfoUpdateForm.Meta.fields)
-        fixed_fields = [f for f in SiteInfoUpdate.standard_fields() if f not in form_fields]
+    @staticmethod
+    def _write_site_info(update, site_id):
+        all_site_info = InfoFileLocks.read_json_file(settings.SITE_INFO_FILE)
+        site_info = all_site_info.setdefault(site_id, dict())
+        for key in SiteInfoUpdate.standard_fields():
+            site_info[key] = str(getattr(update, key))
+
+        utils.backup_file_rolling(settings.SITE_INFO_FILE)
+        InfoFileLocks.write_json_file(settings.SITE_INFO_FILE, all_site_info, indent=4)
+
+    def _make_context(self, form, site_id, site_info=None):
+        if site_info is None:
+            site_info = self._get_site_info(site_id)
+
+        fixed_fields = SiteInfoUpdateForm.fixed_fields()
         fixed_values = {f: {'value': site_info[f], 'name': self._pretty_name(f)} for f in fixed_fields}
         context = {
             'form': form,
@@ -93,7 +132,7 @@ class EditSiteInfo(View):
             'long_name': site_info.get('long_name', '??'),
             'site_id': site_id
         }
-        return render(request, 'siteinfo/edit_site_info.html', context=context)
+        return context
 
     @staticmethod
     def _pretty_name(field):
