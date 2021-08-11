@@ -9,6 +9,8 @@
 <body>
     <h1>Public metadata for {{ info.long_name }} ({{ site_id }})</h1>
 
+    {% if msg %}<p class="alert">{{ msg }}</p>{% endif %}
+
     <table class="pretty-table">
         <tr><th>Field</th><th></th><th>Value</th></tr>
         {% for k, v in info.items %}

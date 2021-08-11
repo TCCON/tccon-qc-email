@@ -21,7 +21,7 @@ class SiteInfoList(View):
         sites_can_edit = self.get_sites_can_edit(request.user)
         print(sites_can_edit)
 
-        sites = [{'id': k, 'name': v['long_name'], 'can_edit': k in sites_can_edit} for k, v in all_site_info.items()]
+        sites = [{'id': k, 'name': v['long_name'], 'can_edit': k in sites_can_edit or 'all' in sites_can_edit} for k, v in all_site_info.items()]
         sites.sort(key=lambda s: s['id'])
 
         sites_can_edit = [s for s in sites if s['can_edit']]
@@ -31,13 +31,16 @@ class SiteInfoList(View):
             'user': request.user,
             'sites_can_edit': sites_can_edit,
             'sites_cannot_edit': sites_cannot_edit,
-            'has_sites': len(sites_can_edit) > 0
+            'has_sites': len(sites_can_edit) > 0,
+            'has_other_sites': len(sites_cannot_edit) > 0
         }
 
         return render(request, 'siteinfo/site_list.html', context=context)
 
     @staticmethod
     def get_sites_can_edit(user):
+        if user.is_staff:
+            return {'all'}
         permissions = user.get_all_permissions()
         sites = set()
         for perm in permissions:
@@ -49,6 +52,8 @@ class SiteInfoList(View):
 
 # Create your views here.
 class ViewSiteInfo(View):
+    _top_messages = {'success': 'Metadata updated successfully!'}
+
     def get(self, request, site_id):
         with open(settings.SITE_INFO_FILE) as f:
             all_site_info = json.load(f)
@@ -58,10 +63,14 @@ class ViewSiteInfo(View):
         except KeyError:
             raise Http404('No existing site information for site "{}"'.format(site_id))
 
+        msg_key = request.GET.get('msg', None)
+        msg = self._top_messages.get(msg_key, '')
+
         context = {
             'site_id': site_id,
             'info': site_info,
-            'can_edit': _can_edit_site(request.user, site_id)
+            'can_edit': _can_edit_site(request.user, site_id),
+            'msg': msg
         }
         return render(request, 'siteinfo/view_site_info.html', context=context)
 
@@ -100,7 +109,8 @@ class EditSiteInfo(View):
             with transaction.atomic():
                 self._write_site_info(update, site_id)
                 update.save()
-            return HttpResponseRedirect(reverse('siteinfo:index'))
+            url = '{}/?msg=success'.format(reverse('siteinfo:view', args=(site_id,)).rstrip('?').rstrip('/'))
+            return HttpResponseRedirect(url)
         else:
             print('Form not valid')
             context = self._make_context(form, site_id)

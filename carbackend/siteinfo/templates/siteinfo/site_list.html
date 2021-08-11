@@ -35,11 +35,14 @@
             </td>
         </tr>
         {% endfor %}
+        {% endif %}
 
+        {% if has_sites and has_other_sites %}
         <tr><td colspan="4" class="spacer"></td></tr>
         <tr><th colspan="4">Other sites</th></tr>
         {% endif %}
 
+        {% if has_other_sites %}
         <tr><th>Site ID</th><th>Site Name</th><th>Public metadata</th><th>Release flags</th></tr>
         {% for site in sites_cannot_edit %}
         <tr>
@@ -53,6 +56,7 @@
             </td>
         </tr>
         {% endfor %}
+        {% endif %}
     </table>
 
 </body>
