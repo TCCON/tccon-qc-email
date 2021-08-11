@@ -58,8 +58,12 @@ class ViewSiteInfo(View):
         except KeyError:
             raise Http404('No existing site information for site "{}"'.format(site_id))
 
-        # TODO: ensure that the standard attributes are in a fixed order
-        return render(request, 'siteinfo/view_site_info.html', context={'site_id': site_id, 'info': site_info})
+        context = {
+            'site_id': site_id,
+            'info': site_info,
+            'can_edit': _can_edit_site(request.user, site_id)
+        }
+        return render(request, 'siteinfo/view_site_info.html', context=context)
 
 
 class EditSiteInfo(View):
@@ -73,7 +77,7 @@ class EditSiteInfo(View):
     #       * Don't know if those should be editable, maybe only by admins?
     def get(self, request, site_id):
         user = request.user
-        if not user.has_perm('opstat.{}_status'.format(site_id)):
+        if not _can_edit_site(user, site_id):
             # TODO: replace
             raise Http404('You cannot edit this site!')
 
@@ -143,8 +147,6 @@ class EditSiteInfo(View):
 
 class ViewReleaseFlags(View):
     def get(self, request, site_id):
-        user = request.user
-
         with open(settings.SITE_INFO_FILE) as f:
             all_info = json.load(f)
             long_name = all_info.get(site_id, dict()).get('long_name', '?')
@@ -181,3 +183,6 @@ class ViewReleaseFlags(View):
 
         return render(request, 'siteinfo/view_release_flags.html', context=context)
 
+
+def _can_edit_site(user, site_id):
+    return user.has_perm('opstat.{}_status'.format(site_id)) or user.is_staff

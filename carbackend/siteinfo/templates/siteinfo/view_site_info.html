@@ -22,6 +22,9 @@
 
     <br>
     <div class="cr">
+        {% if can_edit %}
+        <form action="{% url 'siteinfo:edit' site_id %}"><button type="submit" class="link-button">Edit metadata</button></form>
+        {% endif %}
         <form action="{% url 'siteinfo:index' %}"><button type="submit" class="link-button">Back to main</button></form>
     </div>
 </body>
