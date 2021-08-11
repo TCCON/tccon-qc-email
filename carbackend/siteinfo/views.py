@@ -140,11 +140,13 @@ class EditSiteInfo(View):
 
         fixed_fields = SiteInfoUpdateForm.fixed_fields()
         fixed_values = {f: {'value': site_info[f], 'name': self._pretty_name(f)} for f in fixed_fields}
+
         context = {
             'form': form,
             'fixed_values': fixed_values,
             'long_name': site_info.get('long_name', '??'),
-            'site_id': site_id
+            'site_id': site_id,
+            'contact': utils.get_contact()
         }
         return context
 

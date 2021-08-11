@@ -14,7 +14,7 @@
         <table class="pretty-table form-table">
             <tr><td colspan="2" class="header">
                 These fields cannot be edited here because they are expected to be persistent.
-                Contact Caltech if they require updating.</td></tr>
+                Contact {{ contact }} if they require updating.</td></tr>
             {% for field, info in fixed_values.items %}
             <tr><th>{{ info.name }}</th><td class="fixed">{{ info.value }}</td></tr>
             {% endfor %}
