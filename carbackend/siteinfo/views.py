@@ -150,6 +150,12 @@ class EditSiteInfo(View):
 
 
 class ViewReleaseFlags(View):
+    _messages = {
+        'edited': 'Updated flag number {flag_id} for site {site_id}',
+        'deleted': 'Deleted flag number {flag_id} for site {site_id}',
+        'deletefailed': 'Failed to delete {flag_id} for site {site_id}'
+    }
+
     def get(self, request, site_id):
         with open(settings.SITE_INFO_FILE) as f:
             all_info = json.load(f)
@@ -179,9 +185,17 @@ class ViewReleaseFlags(View):
 
         site_flags.sort(key=lambda el: el['meta']['n'])
 
+        msg_key = request.GET.get('msg', None)
+        if msg_key:
+            flag_id = request.GET.get('flag', '??')
+            msg = self._messages.get(msg_key, '??').format(site_id=site_id, flag_id=flag_id)
+        else:
+            msg = ''
+
         context = {
             'site_id': site_id,
             'long_name': long_name,
+            'msg': msg,
             'has_flags': len(site_flags) > 0,
             'flags': site_flags,
             'can_edit_flags': request.user.is_staff
@@ -190,8 +204,29 @@ class ViewReleaseFlags(View):
         return render(request, 'siteinfo/view_release_flags.html', context=context)
 
 
+class DeleteReleaseFlags(View):
+    def post(self, request, site_id, flag_id):
+        if not _can_edit_site(request.user, site_id):
+            return Http404('You do not have permission to edit site "{}"'.format(site_id))
+
+        flag_dict = InfoFileLocks.read_json_file(settings.RELEASE_FLAGS_FILE)
+        try:
+            key = _find_flag_key(site_id, flag_id, flag_dict)
+        except Http404:
+            url = '{}/?msg=deletefailed&flag={}'.format(reverse('siteinfo:flags', args=(site_id,)).rstrip('?').rstrip('/'), flag_id)
+            return HttpResponseRedirect(url)
+
+        flag_dict.pop(key)
+        ReleaseFlagUpdateForm.update_flag_file(flag_dict)
+        url = '{}/?msg=deleted&flag={}'.format(reverse('siteinfo:flags', args=(site_id,)).rstrip('?').rstrip('/'), flag_id)
+        return HttpResponseRedirect(url)
+
+
 class EditReleaseFlags(View):
     def get(self, request, site_id, flag_id):
+        if not _can_edit_site(request.user, site_id):
+            return Http404('You do not have permission to edit site "{}"'.format(site_id))
+
         if flag_id == 'new':
             form = ReleaseFlagUpdateForm()
             flag_id = self._get_next_flag_id(site_id)
@@ -203,10 +238,13 @@ class EditReleaseFlags(View):
         return render(request, 'siteinfo/edit_release_flags.html', context=context)
 
     def post(self, request, site_id, flag_id):
+        if not _can_edit_site(request.user, site_id):
+            return Http404('You do not have permission to edit site "{}"'.format(site_id))
+
         form = ReleaseFlagUpdateForm(request.POST)
         if form.is_valid():
             form.save_to_json(site_id, flag_id)
-            url = '{}/?msg=success'.format(reverse('siteinfo:flags', args=(site_id,)).rstrip('?').rstrip('/'))
+            url = '{}/?msg=edited&flag={}'.format(reverse('siteinfo:flags', args=(site_id,)).rstrip('?').rstrip('/'), flag_id)
             return HttpResponseRedirect(url)
         else:
             context = self._make_context(form, site_id, flag_id)
@@ -226,16 +264,12 @@ class EditReleaseFlags(View):
     @staticmethod
     def _get_current_flag_info(site_id, flag_id):
         flag_dict = InfoFileLocks.read_json_file(settings.RELEASE_FLAGS_FILE)
-        key_regex = re.compile(r'{}_0*{}'.format(site_id, int(flag_id)))
-        for key in flag_dict:
-            if key_regex.match(key):
-                _, _, start_str, end_str = key.split('_')
-                flag = flag_dict[key]
-                flag['start'] = dt.strptime(start_str, '%Y%m%d').date()
-                flag['end'] = dt.strptime(end_str, '%Y%m%d').date()
-                return flag
-
-        raise Http404('Unable to find existing flag for site "{}" flag "{}"'.format(site_id, flag_id))
+        key = _find_flag_key(site_id, flag_id, flag_dict)
+        _, _, start_str, end_str = key.split('_')
+        flag = flag_dict[key]
+        flag['start'] = dt.strptime(start_str, '%Y%m%d').date()
+        flag['end'] = dt.strptime(end_str, '%Y%m%d').date()
+        return flag
 
     @staticmethod
     def _get_next_flag_id(site_id):
@@ -260,3 +294,12 @@ def _get_site_info(site_id):
         return all_site_info[site_id]
     except KeyError:
         raise Http404('No existing site information for site "{}"'.format(site_id))
+
+
+def _find_flag_key(site_id, flag_id, flag_dict):
+    key_regex = re.compile(r'{}_0*{}'.format(site_id, int(flag_id)))
+    for key in flag_dict:
+        if key_regex.match(key):
+            return key
+
+    raise Http404('Unable to find flag for site "{}" flag number "{}"'.format(site_id, flag_id))

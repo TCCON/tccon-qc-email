@@ -84,5 +84,9 @@ class ReleaseFlagUpdateForm(Form):
         end = self.cleaned_data.pop('end')
         key = '{}_{}_{}_{}'.format(site_id, int(flag_id), start.strftime('%Y%m%d'), end.strftime('%Y%m%d'))
         curr_json[key] = self.cleaned_data
+        self.update_flag_file(curr_json)
+
+    @staticmethod
+    def update_flag_file(flag_dict):
         utils.backup_file_rolling(settings.RELEASE_FLAGS_FILE)
-        InfoFileLocks.write_json_file(settings.RELEASE_FLAGS_FILE, curr_json, indent=4)
+        InfoFileLocks.write_json_file(settings.RELEASE_FLAGS_FILE, flag_dict, indent=4)

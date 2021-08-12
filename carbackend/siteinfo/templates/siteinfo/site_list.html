@@ -31,7 +31,9 @@
                 <form action="{% url 'siteinfo:edit' site.id %}"><button type="submit" class="link-button">Edit</button></form>
             </td>
             <td class="centered">
-                <form action="{% url 'siteinfo:flags' site.id %}"><button type="submit" class="link-button">View</button></form>
+                <form action="{% url 'siteinfo:flags' site.id %}">
+                    <button type="submit" class="link-button">{% if can_edit_flags %} View/Edit {% else %} View {% endif %}</button>
+                </form>
             </td>
         </tr>
         {% endfor %}

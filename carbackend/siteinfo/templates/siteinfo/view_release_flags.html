@@ -9,6 +9,10 @@
 <body>
     <h1>Release flags for {{ long_name }} ({{ site_id }})</h1>
 
+    {% if msg %}
+    <div class="alert">{{ msg }}</div>
+    {% endif %}
+
     {% if has_flags %}
     <table class="pretty-table">
         <tr>
@@ -18,7 +22,7 @@
             <th>Flag code</th>
             <th>Flag name</th>
             <th>Comment</th>
-            {% if can_edit_flags %}<th></th>{% endif %}
+            {% if can_edit_flags %}<th></th><th></th>{% endif %}
         </tr>
         {% for flag in flags %}
         <tr>
@@ -31,6 +35,10 @@
             {% if can_edit_flags %}
             <td><form action="{% url 'siteinfo:editflags' site_id flag.meta.n_str %}">
             <button type="submit" class="link-button">Edit</button>
+            </form></td>
+            <td><form method="post" action="{% url 'siteinfo:deleteflags' site_id flag.meta.n_str %}" onsubmit="return confirm('Do you really want to delete flag {{ flag.meta.n }} for {{ site_id }}?')">
+            {% csrf_token %}
+            <button type="submit" class="link-button">Delete</button>
             </form></td>
             {% endif %}
         </tr>
