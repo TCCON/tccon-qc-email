@@ -170,7 +170,8 @@ class ViewReleaseFlags(View):
             v.setdefault('comment', '')
 
             meta = dict()
-            meta['n'] = n
+            meta['n'] = int(n)
+            meta['n_str'] = str(meta['n'])
             meta['start_date'] = dt.strptime(start_str, '%Y%m%d').date()
             meta['end_date'] = dt.strptime(end_str, '%Y%m%d').date()
 
@@ -182,35 +183,71 @@ class ViewReleaseFlags(View):
             'site_id': site_id,
             'long_name': long_name,
             'has_flags': len(site_flags) > 0,
-            'flags': site_flags
+            'flags': site_flags,
+            'can_edit_flags': request.user.is_staff
         }
 
         return render(request, 'siteinfo/view_release_flags.html', context=context)
 
 
 class EditReleaseFlags(View):
-    def get(self, request, site_id):
-        form = ReleaseFlagUpdateForm()
-        context = self._make_context(form, site_id)
+    def get(self, request, site_id, flag_id):
+        if flag_id == 'new':
+            form = ReleaseFlagUpdateForm()
+            flag_id = self._get_next_flag_id(site_id)
+        elif re.match(r'\d+', flag_id):
+            form = ReleaseFlagUpdateForm(initial=self._get_current_flag_info(site_id, flag_id))
+        else:
+            raise Http404('Invalid flag ID')
+        context = self._make_context(form, site_id, flag_id)
         return render(request, 'siteinfo/edit_release_flags.html', context=context)
 
-    def post(self, request, site_id):
+    def post(self, request, site_id, flag_id):
         form = ReleaseFlagUpdateForm(request.POST)
         if form.is_valid():
+            form.save_to_json(site_id, flag_id)
             url = '{}/?msg=success'.format(reverse('siteinfo:flags', args=(site_id,)).rstrip('?').rstrip('/'))
             return HttpResponseRedirect(url)
         else:
-            context = self._make_context(form, site_id)
+            context = self._make_context(form, site_id, flag_id)
             return render(request, 'siteinfo/edit_release_flags.html', context=context)
 
-    def _make_context(self, form, site_id):
+    @staticmethod
+    def _make_context(form, site_id, flag_id):
         site_info = _get_site_info(site_id)
 
         return {
             'site_id': site_id,
+            'flag_id': flag_id,
             'long_name': site_info.get('long_name', '??'),
             'form': form
         }
+
+    @staticmethod
+    def _get_current_flag_info(site_id, flag_id):
+        flag_dict = InfoFileLocks.read_json_file(settings.RELEASE_FLAGS_FILE)
+        key_regex = re.compile(r'{}_0*{}'.format(site_id, int(flag_id)))
+        for key in flag_dict:
+            if key_regex.match(key):
+                _, _, start_str, end_str = key.split('_')
+                flag = flag_dict[key]
+                flag['start'] = dt.strptime(start_str, '%Y%m%d').date()
+                flag['end'] = dt.strptime(end_str, '%Y%m%d').date()
+                return flag
+
+        raise Http404('Unable to find existing flag for site "{}" flag "{}"'.format(site_id, flag_id))
+
+    @staticmethod
+    def _get_next_flag_id(site_id):
+        flag_dict = InfoFileLocks.read_json_file(settings.RELEASE_FLAGS_FILE)
+        n = 0
+        for key in flag_dict:
+            if key.startswith(site_id):
+                _, key_n, _, _ = key.split('_')
+                key_n = int(key_n)
+                if key_n > n:
+                    n = key_n
+        return str(n + 1)
 
 
 def _can_edit_site(user, site_id):

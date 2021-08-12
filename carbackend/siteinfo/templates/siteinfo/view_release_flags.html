@@ -11,7 +11,15 @@
 
     {% if has_flags %}
     <table class="pretty-table">
-        <tr><th></th> <th>Start date</th> <th>End date</th> <th>Flag code</th> <th>Flag name</th> <th>Comment</th></tr>
+        <tr>
+            <th></th>
+            <th>Start date</th>
+            <th>End date</th>
+            <th>Flag code</th>
+            <th>Flag name</th>
+            <th>Comment</th>
+            {% if can_edit_flags %}<th></th>{% endif %}
+        </tr>
         {% for flag in flags %}
         <tr>
             <th>{{ flag.meta.n }}</th>
@@ -20,6 +28,11 @@
             <td>{{ flag.info.value }}</td>
             <td>{{ flag.info.name }}</td>
             <td>{{ flag.info.comment }}</td>
+            {% if can_edit_flags %}
+            <td><form action="{% url 'siteinfo:editflags' site_id flag.meta.n_str %}">
+            <button type="submit" class="link-button">Edit</button>
+            </form></td>
+            {% endif %}
         </tr>
         {% endfor %}
     </table>
@@ -29,6 +42,9 @@
 
     <br>
     <div class="cr">
+        {% if can_edit_flags %}
+        <form action="{% url 'siteinfo:editflags' site_id 'new' %}"><button type="submit" class="link-button">Add new flagged time period</button></form>
+        {% endif %}
         <form action="{% url 'siteinfo:index' %}"><button type="submit" class="link-button">Back to main</button></form>
     </div>
 </body>

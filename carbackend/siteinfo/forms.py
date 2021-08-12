@@ -3,10 +3,10 @@ import json
 from django.conf import settings
 from django import forms
 from django.forms import ModelForm, Form
-from .models import SiteInfoUpdate
+from .models import SiteInfoUpdate, InfoFileLocks
 from . import utils
 
-from datetime import datetime
+from datetime import datetime, date
 import re
 _this_year = datetime.today().year
 
@@ -65,11 +65,24 @@ class ReleaseFlagUpdateForm(Form):
 
     def clean(self):
         cleaned_data = super().clean()
-        import pdb; pdb.set_trace()
+        print(cleaned_data)
         name = cleaned_data.get('name', None)
         flag_values = _get_flag_values()
         if name not in flag_values:
             # should never be the case, since the name has to be selected from a set of choices
             self.add_error('name', 'Error reason "{}" is not one of the allowed values'.format(name))
 
+        if 'start' in cleaned_data and 'end' in cleaned_data and cleaned_data.get('start') > cleaned_data['end']:
+            self.add_error('start', 'Start date cannot be after end date')
+            self.add_error('end', 'End date cannot be before start date')
 
+    def save_to_json(self, site_id, flag_id):
+        curr_json = InfoFileLocks.read_json_file(settings.RELEASE_FLAGS_FILE)
+        flag_defs = InfoFileLocks.read_json_file(settings.RELEASE_FLAGS_DEF_FILE)['definitions']
+        self.cleaned_data['value'] = flag_defs[self.cleaned_data['name']]
+        start = self.cleaned_data.pop('start')
+        end = self.cleaned_data.pop('end')
+        key = '{}_{}_{}_{}'.format(site_id, int(flag_id), start.strftime('%Y%m%d'), end.strftime('%Y%m%d'))
+        curr_json[key] = self.cleaned_data
+        utils.backup_file_rolling(settings.RELEASE_FLAGS_FILE)
+        InfoFileLocks.write_json_file(settings.RELEASE_FLAGS_FILE, curr_json, indent=4)
