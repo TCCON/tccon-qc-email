@@ -32,6 +32,9 @@
             </td>
             <td class="centered">
                 <form action="{% url 'siteinfo:flags' site.id %}"><button type="submit" class="link-button">View</button></form>
+                {% if can_edit_flags %}
+                <form action="{% url 'siteinfo:editflags' site.id %}"><button type="submit" class="link-button">Edit</button></form>
+                {% endif %}
             </td>
         </tr>
         {% endfor %}

@@ -8,7 +8,7 @@ from datetime import datetime as dt
 import json
 import re
 
-from .forms import SiteInfoUpdateForm
+from .forms import SiteInfoUpdateForm, ReleaseFlagUpdateForm
 from .models import SiteInfoUpdate, InfoFileLocks
 from . import utils
 
@@ -32,7 +32,8 @@ class SiteInfoList(View):
             'sites_can_edit': sites_can_edit,
             'sites_cannot_edit': sites_cannot_edit,
             'has_sites': len(sites_can_edit) > 0,
-            'has_other_sites': len(sites_cannot_edit) > 0
+            'has_other_sites': len(sites_cannot_edit) > 0,
+            'can_edit_flags': request.user.is_staff
         }
 
         return render(request, 'siteinfo/site_list.html', context=context)
@@ -90,7 +91,7 @@ class EditSiteInfo(View):
             # TODO: replace
             raise Http404('You cannot edit this site!')
 
-        site_info = self._get_site_info(site_id)
+        site_info = _get_site_info(site_id)
         form = SiteInfoUpdateForm(initial=site_info)
         context = self._make_context(form, site_id, site_info)
         return render(request, 'siteinfo/edit_site_info.html', context=context)
@@ -99,7 +100,7 @@ class EditSiteInfo(View):
         form = SiteInfoUpdateForm(request.POST)
         if form.is_valid():
             # form.save(user=request.user, site_info=self._get_site_info(site_id))
-            site_info = self._get_site_info(site_id)
+            site_info = _get_site_info(site_id)
             update = form.save(commit=False)
             update.user_updated = request.user
             update.site_id = site_id
@@ -112,17 +113,8 @@ class EditSiteInfo(View):
             url = '{}/?msg=success'.format(reverse('siteinfo:view', args=(site_id,)).rstrip('?').rstrip('/'))
             return HttpResponseRedirect(url)
         else:
-            print('Form not valid')
             context = self._make_context(form, site_id)
             return render(request, 'siteinfo/edit_site_info.html', context=context)
-
-    @staticmethod
-    def _get_site_info(site_id):
-        all_site_info = InfoFileLocks.read_json_file(settings.SITE_INFO_FILE)
-        try:
-            return all_site_info[site_id]
-        except KeyError:
-            raise Http404('No existing site information for site "{}"'.format(site_id))
 
     @staticmethod
     def _write_site_info(update, site_id):
@@ -136,7 +128,7 @@ class EditSiteInfo(View):
 
     def _make_context(self, form, site_id, site_info=None):
         if site_info is None:
-            site_info = self._get_site_info(site_id)
+            site_info = _get_site_info(site_id)
 
         fixed_fields = SiteInfoUpdateForm.fixed_fields()
         fixed_values = {f: {'value': site_info[f], 'name': self._pretty_name(f)} for f in fixed_fields}
@@ -196,5 +188,38 @@ class ViewReleaseFlags(View):
         return render(request, 'siteinfo/view_release_flags.html', context=context)
 
 
+class EditReleaseFlags(View):
+    def get(self, request, site_id):
+        form = ReleaseFlagUpdateForm()
+        context = self._make_context(form, site_id)
+        return render(request, 'siteinfo/edit_release_flags.html', context=context)
+
+    def post(self, request, site_id):
+        form = ReleaseFlagUpdateForm(request.POST)
+        if form.is_valid():
+            url = '{}/?msg=success'.format(reverse('siteinfo:flags', args=(site_id,)).rstrip('?').rstrip('/'))
+            return HttpResponseRedirect(url)
+        else:
+            context = self._make_context(form, site_id)
+            return render(request, 'siteinfo/edit_release_flags.html', context=context)
+
+    def _make_context(self, form, site_id):
+        site_info = _get_site_info(site_id)
+
+        return {
+            'site_id': site_id,
+            'long_name': site_info.get('long_name', '??'),
+            'form': form
+        }
+
+
 def _can_edit_site(user, site_id):
     return user.has_perm('opstat.{}_status'.format(site_id)) or user.is_staff
+
+
+def _get_site_info(site_id):
+    all_site_info = InfoFileLocks.read_json_file(settings.SITE_INFO_FILE)
+    try:
+        return all_site_info[site_id]
+    except KeyError:
+        raise Http404('No existing site information for site "{}"'.format(site_id))
