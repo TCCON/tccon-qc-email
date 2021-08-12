@@ -180,6 +180,7 @@ class ViewReleaseFlags(View):
             meta['n_str'] = str(meta['n'])
             meta['start_date'] = dt.strptime(start_str, '%Y%m%d').date()
             meta['end_date'] = dt.strptime(end_str, '%Y%m%d').date()
+            meta['plot_path'] = 'plots/' + v['plot'] if 'plot' in v else None
 
             site_flags.append({'info': v, 'meta': meta})
 
@@ -241,7 +242,7 @@ class EditReleaseFlags(View):
         if not _can_edit_site(request.user, site_id):
             return Http404('You do not have permission to edit site "{}"'.format(site_id))
 
-        form = ReleaseFlagUpdateForm(request.POST)
+        form = ReleaseFlagUpdateForm(request.POST, request.FILES)
         if form.is_valid():
             form.save_to_json(site_id, flag_id)
             url = '{}/?msg=edited&flag={}'.format(reverse('siteinfo:flags', args=(site_id,)).rstrip('?').rstrip('/'), flag_id)

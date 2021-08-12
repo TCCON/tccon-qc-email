@@ -6,7 +6,8 @@ from django.forms import ModelForm, Form
 from .models import SiteInfoUpdate, InfoFileLocks
 from . import utils
 
-from datetime import datetime, date
+from datetime import datetime
+import os
 import re
 _this_year = datetime.today().year
 
@@ -62,6 +63,7 @@ class ReleaseFlagUpdateForm(Form):
     end = forms.DateField(label='End date', widget=forms.SelectDateWidget(years=tuple(range(2000, _this_year+1))))
     name = forms.ChoiceField(label='Flag reason', choices=_get_flag_name_choices)
     comment = forms.CharField(label='Comment', max_length=256)
+    plot = forms.FileField(label='Upload an image of a plot', required=False)
 
     def clean(self):
         cleaned_data = super().clean()
@@ -79,7 +81,20 @@ class ReleaseFlagUpdateForm(Form):
     def save_to_json(self, site_id, flag_id):
         curr_json = InfoFileLocks.read_json_file(settings.RELEASE_FLAGS_FILE)
         flag_defs = InfoFileLocks.read_json_file(settings.RELEASE_FLAGS_DEF_FILE)['definitions']
+
+        # Update the JSON structure, add fields for the value and plot
         self.cleaned_data['value'] = flag_defs[self.cleaned_data['name']]
+        if 'plot' in self.cleaned_data and self.cleaned_data['plot'] is not None:
+            plot_data = self.cleaned_data['plot']
+            _, ext = os.path.splitext(plot_data.name)
+            plot_file = settings.FLAG_PLOT_DIRECTORY / '{}_{}_plot{}'.format(site_id, flag_id, ext)
+            if not settings.FLAG_PLOT_DIRECTORY.exists():
+                settings.FLAG_PLOT_DIRECTORY.mkdir()
+            with open(plot_file, 'wb') as dest:
+                for chunk in plot_data:
+                    dest.write(chunk)
+            self.cleaned_data['plot'] = str(plot_file.name)
+
         start = self.cleaned_data.pop('start')
         end = self.cleaned_data.pop('end')
         key = '{}_{}_{}_{}'.format(site_id, int(flag_id), start.strftime('%Y%m%d'), end.strftime('%Y%m%d'))

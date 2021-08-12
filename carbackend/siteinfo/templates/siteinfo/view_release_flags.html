@@ -22,6 +22,7 @@
             <th>Flag code</th>
             <th>Flag name</th>
             <th>Comment</th>
+            <th>Plot</th>
             {% if can_edit_flags %}<th></th><th></th>{% endif %}
         </tr>
         {% for flag in flags %}
@@ -32,6 +33,11 @@
             <td>{{ flag.info.value }}</td>
             <td>{{ flag.info.name }}</td>
             <td>{{ flag.info.comment }}</td>
+            <td>
+                {% if flag.meta.plot_path %}
+                <a href="{% static flag.meta.plot_path %}"><img src="{% static flag.meta.plot_path %}" height="100px"/></a>
+                {% endif %}
+            </td>
             {% if can_edit_flags %}
             <td><form action="{% url 'siteinfo:editflags' site_id flag.meta.n_str %}">
             <button type="submit" class="link-button">Edit</button>
