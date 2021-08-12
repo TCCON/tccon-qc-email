@@ -2,7 +2,7 @@ import json
 
 from django.conf import settings
 from django import forms
-from django.forms import ModelForm, Form
+from django.forms import ModelForm, Form, FileField
 from .models import SiteInfoUpdate, InfoFileLocks
 from . import utils
 
@@ -58,12 +58,44 @@ def _get_flag_values():
         return json.load(f)['definitions']
 
 
+class TypeRestrictedFileField(FileField):
+    # Based on https://blog.bixly.com/accept-only-specific-file-types-in-django-file-upload
+    def __init__(self, *args, **kwargs):
+        self._content_types = set(kwargs.pop('content_types', {}))
+        self._max_upload_bytes = kwargs.pop('max_upload_bytes', None)
+        super().__init__(*args, **kwargs)
+
+    def clean(self, *args, **kwargs):
+        data = super().clean(*args, **kwargs)
+        import pdb; pdb.set_trace()
+        file = data.file
+        try:
+            content_type = data.content_type
+            file_size = file.seek(0, 2)  # seek to the end and get the byte position
+            file.seek(0)  # then go back to the beginning
+            if content_type not in self._content_types:
+                raise forms.ValidationError('Unsupported file type "{}". Supported types are: {}'.format(
+                    content_type, ', '.join(self._content_types)
+                ))
+            elif self._max_upload_bytes is not None and file_size > self._max_upload_bytes:
+                raise forms.ValidationError('File exceeds allowed size of {} bytes (file size = {} bytes)'.format(
+                    self._max_upload_bytes, file_size
+                ))
+        except AttributeError:
+            pass
+
+        return data
+
+
 class ReleaseFlagUpdateForm(Form):
     start = forms.DateField(label='Start date', widget=forms.SelectDateWidget(years=tuple(range(2000, _this_year+1))))
     end = forms.DateField(label='End date', widget=forms.SelectDateWidget(years=tuple(range(2000, _this_year+1))))
     name = forms.ChoiceField(label='Flag reason', choices=_get_flag_name_choices)
     comment = forms.CharField(label='Comment', max_length=256)
-    plot = forms.FileField(label='Upload an image of a plot', required=False)
+    plot = TypeRestrictedFileField(label='Upload an image of a plot',
+                                   required=False,
+                                   max_upload_bytes=5*1024**2,  # 5 MB
+                                   content_types=('image/jpg', 'image/png'))
 
     def clean(self):
         cleaned_data = super().clean()
