@@ -51,6 +51,29 @@ class SiteInfoList(View):
         return sites
 
 
+class MissingPermission(View):
+    def get(self, request):
+        msg = request.GET.get('msg', None)
+        site_id = request.GET.get('site', '??')
+        what = request.GET.get('what', 'that')
+
+        if msg == 'lackperm':
+            msg = 'You do not have permissions to edit {what} for site {site}.'
+        elif msg == 'notloggedin':
+            msg = 'You need to be logged in to edit {what}.'
+        elif msg == 'getnotallowed':
+            msg = 'You tried to directly visit a URL only used to update {what} - this does nothing. You must use the correct form on this website.'
+        else:
+            msg = 'You are not allowed to edit {what} for site {site}.'
+
+        msg = msg.format(what=what, site=site_id)
+        context = {
+            'msg': msg,
+            'is_logged_in': request.user.is_authenticated
+        }
+        return render(request, 'siteinfo/missing_permission.html', context=context)
+
+
 # Create your views here.
 class ViewSiteInfo(View):
     _top_messages = {'success': 'Metadata updated successfully!'}
@@ -88,8 +111,7 @@ class EditSiteInfo(View):
     def get(self, request, site_id):
         user = request.user
         if not _can_edit_site(user, site_id):
-            # TODO: replace
-            raise Http404('You cannot edit this site!')
+            return _redirect_for_lack_of_permission(request, site_id, 'public metadata')
 
         site_info = _get_site_info(site_id)
         form = SiteInfoUpdateForm(initial=site_info)
@@ -206,9 +228,12 @@ class ViewReleaseFlags(View):
 
 
 class DeleteReleaseFlags(View):
+    def get(self, request, site_id, flag_id):
+        return _redirect_for_lack_of_permission(request, site_id, 'release flags', 'getnotallowed')
+
     def post(self, request, site_id, flag_id):
-        if not _can_edit_site(request.user, site_id):
-            return Http404('You do not have permission to edit site "{}"'.format(site_id))
+        if not _can_edit_site_flags(request.user, site_id):
+            return _redirect_for_lack_of_permission(request, site_id, 'release flags')
 
         flag_dict = InfoFileLocks.read_json_file(settings.RELEASE_FLAGS_FILE)
         try:
@@ -225,8 +250,8 @@ class DeleteReleaseFlags(View):
 
 class EditReleaseFlags(View):
     def get(self, request, site_id, flag_id):
-        if not _can_edit_site(request.user, site_id):
-            return Http404('You do not have permission to edit site "{}"'.format(site_id))
+        if not _can_edit_site_flags(request.user, site_id):
+            return _redirect_for_lack_of_permission(request, site_id, 'release flags')
 
         if flag_id == 'new':
             form = ReleaseFlagUpdateForm()
@@ -239,8 +264,8 @@ class EditReleaseFlags(View):
         return render(request, 'siteinfo/edit_release_flags.html', context=context)
 
     def post(self, request, site_id, flag_id):
-        if not _can_edit_site(request.user, site_id):
-            return Http404('You do not have permission to edit site "{}"'.format(site_id))
+        if not _can_edit_site_flags(request.user, site_id):
+            return _redirect_for_lack_of_permission(request, site_id)
 
         form = ReleaseFlagUpdateForm(request.POST, request.FILES)
         if form.is_valid():
@@ -289,6 +314,10 @@ def _can_edit_site(user, site_id):
     return user.has_perm('opstat.{}_status'.format(site_id)) or user.is_staff
 
 
+def _can_edit_site_flags(user, site_id):
+    return user.is_staff
+
+
 def _get_site_info(site_id):
     all_site_info = InfoFileLocks.read_json_file(settings.SITE_INFO_FILE)
     try:
@@ -304,3 +333,13 @@ def _find_flag_key(site_id, flag_id, flag_dict):
             return key
 
     raise Http404('Unable to find flag for site "{}" flag number "{}"'.format(site_id, flag_id))
+
+
+def _redirect_for_lack_of_permission(request, site_id, what, why='permission'):
+    base_url = reverse('siteinfo:missingperm').rstrip('?').rstrip('/')
+    if why == 'permission':
+        reason = 'lacksperm' if request.user.is_authenticated else 'notloggedin'
+    else:
+        reason = why
+    url = '{}/?msg={}&site={}&what={}'.format(base_url, reason, site_id, what)
+    return HttpResponseRedirect(url)

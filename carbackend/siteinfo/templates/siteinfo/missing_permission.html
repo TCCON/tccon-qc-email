@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Missing permission</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/opstat.css' %}">
+</head>
+<body>
+    <h1>Access denied</h1>
+
+    <p class="alert">{{ msg }}</p>
+    {% if not is_logged_in %}
+    <a href="{% url 'login' %}?next={% url 'siteinfo:index' %}">Log in</a>
+    {% endif %}
+
+    <div class="cr">
+        <form action="{% url 'siteinfo:index' %}"><button type="submit" class="link-button">Back to main</button></form>
+    </div>
+</body>
+</html>
