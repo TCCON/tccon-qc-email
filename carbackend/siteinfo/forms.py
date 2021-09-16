@@ -2,7 +2,7 @@ import json
 
 from django.conf import settings
 from django import forms
-from django.forms import ModelForm, Form, FileField
+from django.forms import ModelForm, Form, FileField, TextInput
 from .models import SiteInfoUpdate, InfoFileLocks
 from . import utils
 
@@ -39,6 +39,31 @@ class SiteInfoUpdateForm(ModelForm):
             self.add_error('contact', 'Must have format "Name <email>" (no quotes) or "Name1 <email1>; Name2 <email2>"')
         if cleaned_data['release_lag'] > utils.get_max_release_lag():
             self.add_error('release_lag', 'Release lag cannot be greater than {} days'.format(settings.MAX_RELEASE_LAG))
+
+        return cleaned_data
+
+
+class SiteInfoUpdateStaffForm(SiteInfoUpdateForm):
+    class Meta:
+        model = SiteInfoUpdate
+        fields = ['long_name',
+                  'data_doi',
+                  'data_revision',
+                  'release_lag',
+                  'location',
+                  'contact',
+                  'site_reference',
+                  'data_reference']
+        widgets = {
+            'data_doi': TextInput()
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if not cleaned_data.get('data_doi', '').startswith('10.'):
+            self.add_error('data_doi', 'DOI must start with "10." (do not include leading "doi.org" or the like)')
+        cleaned_data['data_doi'] = cleaned_data.get('data_doi', '').strip()  # just in case, make sure no surrounding whitespace
+        return cleaned_data
 
 
 def _get_flag_name_choices():

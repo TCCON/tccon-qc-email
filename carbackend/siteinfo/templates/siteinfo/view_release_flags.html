@@ -58,6 +58,8 @@
     <div class="cr">
         {% if can_edit_flags %}
         <form action="{% url 'siteinfo:editflags' site_id 'new' %}"><button type="submit" class="link-button">Add new flagged time period</button></form>
+        {% else %}
+        <p>To add/remove/edit flagged periods, contact {{ contact }}.</p>
         {% endif %}
         <form action="{% url 'siteinfo:index' %}"><button type="submit" class="link-button">Back to main</button></form>
     </div>

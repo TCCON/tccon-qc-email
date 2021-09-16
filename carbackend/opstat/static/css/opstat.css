@@ -99,6 +99,10 @@ td {
     border-top: 2px solid black;
 }
 
+.form-table {
+    max-width: 80%;
+}
+
 .form-table td {
     border-top: 2px solid black;
 }

@@ -8,7 +8,7 @@ from datetime import datetime as dt
 import json
 import re
 
-from .forms import SiteInfoUpdateForm, ReleaseFlagUpdateForm
+from .forms import SiteInfoUpdateForm, SiteInfoUpdateStaffForm, ReleaseFlagUpdateForm
 from .models import SiteInfoUpdate, InfoFileLocks
 from . import utils
 
@@ -114,12 +114,12 @@ class EditSiteInfo(View):
             return _redirect_for_lack_of_permission(request, site_id, 'public metadata')
 
         site_info = _get_site_info(site_id)
-        form = SiteInfoUpdateForm(initial=site_info)
-        context = self._make_context(form, site_id, site_info)
+        form = self._get_form(user, site_id)
+        context = self._make_context(user, form, site_id, site_info)
         return render(request, 'siteinfo/edit_site_info.html', context=context)
 
     def post(self, request, site_id):
-        form = SiteInfoUpdateForm(request.POST)
+        form = self._get_form(request.user, site_id, post_data=request.POST)
         if form.is_valid():
             # form.save(user=request.user, site_info=self._get_site_info(site_id))
             site_info = _get_site_info(site_id)
@@ -139,6 +139,24 @@ class EditSiteInfo(View):
             return render(request, 'siteinfo/edit_site_info.html', context=context)
 
     @staticmethod
+    def _get_form(user, site_id, post_data=None):
+        if post_data is None:
+            site_info = _get_site_info(site_id)
+            if _can_edit_all_site_info(user, site_id):
+                return SiteInfoUpdateStaffForm(initial=site_info)
+            elif _can_edit_site(user, site_id):
+                return SiteInfoUpdateForm(initial=site_info)
+            else:
+                raise Http404('Sorry, you cannot access the information form for site "{}"'.format(site_id))
+        else:
+            if _can_edit_all_site_info(user, site_id):
+                return SiteInfoUpdateStaffForm(post_data)
+            elif _can_edit_site(user, site_id):
+                return SiteInfoUpdateForm(post_data)
+            else:
+                raise Http404('Sorry, you cannot access the information form for site "{}"'.format(site_id))
+
+    @staticmethod
     def _write_site_info(update, site_id):
         all_site_info = InfoFileLocks.read_json_file(settings.SITE_INFO_FILE)
         site_info = all_site_info.setdefault(site_id, dict())
@@ -148,19 +166,22 @@ class EditSiteInfo(View):
         utils.backup_file_rolling(settings.SITE_INFO_FILE)
         InfoFileLocks.write_json_file(settings.SITE_INFO_FILE, all_site_info, indent=4)
 
-    def _make_context(self, form, site_id, site_info=None):
+    def _make_context(self, user, form, site_id, site_info=None):
         if site_info is None:
             site_info = _get_site_info(site_id)
 
-        fixed_fields = SiteInfoUpdateForm.fixed_fields()
+        fixed_fields = form.fixed_fields()
         fixed_values = {f: {'value': site_info[f], 'name': self._pretty_name(f)} for f in fixed_fields}
+        std_fixed_fields = SiteInfoUpdateForm.fixed_fields()
 
         context = {
             'form': form,
             'fixed_values': fixed_values,
+            'std_fixed_fields': {'n': len(std_fixed_fields), 'fields': _grammatical_join(std_fixed_fields)},
             'long_name': site_info.get('long_name', '??'),
             'site_id': site_id,
-            'contact': utils.get_contact()
+            'contact': utils.get_contact(),
+            'can_edit_all': _can_edit_all_site_info(user, site_id)
         }
         return context
 
@@ -221,7 +242,8 @@ class ViewReleaseFlags(View):
             'msg': msg,
             'has_flags': len(site_flags) > 0,
             'flags': site_flags,
-            'can_edit_flags': request.user.is_staff
+            'can_edit_flags': request.user.is_staff,
+            'contact': utils.get_contact()
         }
 
         return render(request, 'siteinfo/view_release_flags.html', context=context)
@@ -314,6 +336,10 @@ def _can_edit_site(user, site_id):
     return user.has_perm('opstat.{}_status'.format(site_id)) or user.is_staff
 
 
+def _can_edit_all_site_info(user, site_id):
+    return user.is_staff
+
+
 def _can_edit_site_flags(user, site_id):
     return user.is_staff
 
@@ -343,3 +369,13 @@ def _redirect_for_lack_of_permission(request, site_id, what, why='permission'):
         reason = why
     url = '{}/?msg={}&site={}&what={}'.format(base_url, reason, site_id, what)
     return HttpResponseRedirect(url)
+
+
+def _grammatical_join(seq, conjunction='and'):
+    if len(seq) == 1:
+        return seq[0]
+    elif len(seq) == 2:
+        return '{} {} {}'.format(seq[0], conjunction, seq[1])
+    else:
+        s = ', '.join(seq[:-1])
+        return '{}, {} {}'.format(s, conjunction, seq[-1])
