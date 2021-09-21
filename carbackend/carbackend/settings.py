@@ -146,3 +146,6 @@ CACHES = {
 
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
+# This makes sure the password reset goes to the right place and the login page as well
+LOGIN_URL = '/car/accounts/login/'
+LOGIN_REDIRECT_URL = '/car/opstat/'
