@@ -65,18 +65,34 @@ DEBUG = False
 ALLOWED_HOSTS = ['parkfalls.gps.caltech.edu', '131.215.65.68']
 
 
+# Enable/disable parts of the application depending on which VM
+# we're running on
+ENABLE_SITE_STATUS = True
+ENABLE_SITE_METADATA = True
+
+if VM == Vms.PARKFALLS:
+    ENABLE_SITE_METADATA = False
+elif VM == Vms.TCCONDATA:
+    ENABLE_SITE_STATUS = False
+
+
 # Application definition
 
-INSTALLED_APPS = [
-    'opstat.apps.OpstatConfig',
-    'siteinfo.apps.SiteinfoConfig',
+INSTALLED_APPS = []
+
+if ENABLE_SITE_STATUS:
+    INSTALLED_APPS.append('opstat.apps.OpstatConfig')
+if ENABLE_SITE_METADATA:
+    INSTALLED_APPS.append('siteinfo.apps.SiteinfoConfig')
+
+INSTALLED_APPS.extend([
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-]
+])
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
