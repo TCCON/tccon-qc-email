@@ -135,7 +135,7 @@ class EditSiteInfo(View):
             url = '{}/?msg=success'.format(reverse('siteinfo:view', args=(site_id,)).rstrip('?').rstrip('/'))
             return HttpResponseRedirect(url)
         else:
-            context = self._make_context(form, site_id)
+            context = self._make_context(request.user, form, site_id)
             return render(request, 'siteinfo/edit_site_info.html', context=context)
 
     @staticmethod

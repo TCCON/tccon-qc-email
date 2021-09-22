@@ -38,7 +38,7 @@ class SiteInfoUpdateForm(ModelForm):
         if not contact_re.match(cleaned_data.get('contact', '')):
             self.add_error('contact', 'Must have format "Name <email>" (no quotes) or "Name1 <email1>; Name2 <email2>"')
         if cleaned_data['release_lag'] > utils.get_max_release_lag():
-            self.add_error('release_lag', 'Release lag cannot be greater than {} days'.format(settings.MAX_RELEASE_LAG))
+            self.add_error('release_lag', 'Release lag cannot be greater than {} days'.format(utils.get_max_release_lag()))
 
         return cleaned_data
 
