@@ -10,24 +10,59 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 
+from enum import Enum
+import json
 from pathlib import Path
+from socket import gethostname
+from warnings import warn
+
+# Check whether running on parkfalls.gps.caltech.edu or tccondata.gps.caltech.edu.
+# The former runs the site status page; the latter the site metadata page.
+# Some of the configuration will need to be host dependent
+class Vms(Enum):
+    UNKNOWN = 0
+    PARKFALLS = 1
+    TCCONDATA = 2
+
+_hostname = gethostname()
+if _hostname.startswith('parkfalls'):
+    VM = Vms.PARKFALLS
+elif _hostname.startswith('tccondata'):
+    VM = Vms.TCCONDATA
+else:
+    warn('Could not detect which VM running on')
+    VM = Vms.UNKNOWN
+
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+if VM == Vms.TCCONDATA:
+    # I had lots of trouble redirecting to a subserver with nginx
+    # If I just had nginx pass everything under /metadata to Django,
+    # the URLs Django got didn't match what it was expecting.
+    # Rewriting the URLs in Django fixed that, but then some links in
+    # the Django pages wouldn't be prefixed with /metadata - this fixes
+    # that.
+    FORCE_SCRIPT_NAME = '/metadata'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # SECRET_KEY = 'c=7zkf@c#(8ffy_8blas$frx*f53uqrv$hlsq$%2%2&19wsqyw'
-with open('/var/www/car/info/key.txt') as f:
-    SECRET_KEY = f.read().strip()
+if VM == Vms.PARKFALLS:
+    with open('/var/www/car/info/key.txt') as f:
+        SECRET_KEY = f.read().strip()
+elif VM == Vms.TCCONDATA:
+    with open('/etc/siteinfo-portal/key.txt') as f:
+        SECRET_KEY = f.read().strip()
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['parkfalls.gps.caltech.edu']
+ALLOWED_HOSTS = ['parkfalls.gps.caltech.edu', '131.215.65.68']
 
 
 # Application definition
@@ -77,11 +112,18 @@ WSGI_APPLICATION = 'carbackend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
+if VM == Vms.PARKFALLS:
+    _db_file = '/var/www/car/info/maria.cnf'
+elif VM == Vms.TCCONDATA:
+    _db_file = '/etc/siteinfo-portal/maria.cnf'
+else:
+    _db_file = str(BASE_DIR / 'maria.cnf')
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'OPTIONS': {
-            'read_default_file': '/var/www/car/info/maria.cnf',
+            'read_default_file': _db_file,
         }
     }
 }
@@ -123,20 +165,28 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
-STATIC_URL = '/carstatic/'
-STATIC_ROOT = '/var/www/car/static/'
+if VM == Vms.PARKFALLS:
+    STATIC_URL = '/carstatic/'
+    STATIC_ROOT = '/var/www/car/static/'
 
-DEFAULT_FROM_EMAIL = 'sitestatus@parkfalls.gps.caltech.edu'
-SERVER_EMAIL = 'sitestatusadmin@parkfalls.gps.caltech.edu'
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gps.caltech.edu'
-EMAIL_PORT = 25
-EMAIL_HOST_USER = None
-EMAIL_HOST_PASSWORD = None
-EMAIL_USE_TLS = None
-EMAIL_USE_SSL = None
-EMAIL_SSL_KEYFILE = None
-EMAIL_TIMEOUT = None
+    DEFAULT_FROM_EMAIL = 'sitestatus@parkfalls.gps.caltech.edu'
+    SERVER_EMAIL = 'sitestatusadmin@parkfalls.gps.caltech.edu'
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = 'smtp.gps.caltech.edu'
+    EMAIL_PORT = 25
+    EMAIL_HOST_USER = None
+    EMAIL_HOST_PASSWORD = None
+    EMAIL_USE_TLS = None
+    EMAIL_USE_SSL = None
+    EMAIL_SSL_KEYFILE = None
+    EMAIL_TIMEOUT = None
+
+elif VM == Vms.TCCONDATA:
+    STATIC_URL = '/djstatic/'
+    STATIC_ROOT = '/var/www/siteinfo-portal/static'
+
+else:
+    STATIC_URL = '/static/'
 
 CACHES = {
     'default': {
@@ -145,8 +195,25 @@ CACHES = {
     }
 }
 
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True  # set to False if HTTPS not enabled and need to test login
+SESSION_COOKIE_SECURE = True  # set to False if HTTPS not enabled and need to test login
 # This makes sure the password reset goes to the right place and the login page as well
-LOGIN_URL = '/car/accounts/login/'
-LOGIN_REDIRECT_URL = '/car/opstat/'
+if VM == Vms.PARKFALLS:
+    LOGIN_URL = '/car/accounts/login/'
+    LOGIN_REDIRECT_URL = '/car/opstat/'
+elif VM == Vms.TCCONDATA:
+    LOGIN_URL = '/metadata/accounts/login/'
+    LOGIN_REDIRECT_URL = '/metadata/siteinfo/'
+
+if VM == Vms.TCCONDATA:
+    SITE_INFO_FILE = Path('/var/www/tccon-metadata/site_info.json')
+    RELEASE_FLAGS_FILE = Path('/var/www/tccon-metadata/release_flags.json')
+    RELEASE_FLAGS_DEF_FILE = Path('/var/www/tccon-metadata/release_flag_definitions.json')
+    RUNTIME_SETTINGS_FILE = BASE_DIR / 'metadata_config.json'
+    FLAG_PLOT_DIRECTORY = Path('/data/tccon/release_flags_uploaded_plots')
+else:
+    SITE_INFO_FILE = BASE_DIR / 'site_info.json'
+    RELEASE_FLAGS_FILE = BASE_DIR / 'release_flags.json'
+    RELEASE_FLAGS_DEF_FILE = BASE_DIR / 'release_flag_definitions.json'
+    RUNTIME_SETTINGS_FILE = BASE_DIR / 'metadata_config.json'
+    FLAG_PLOT_DIRECTORY = None
