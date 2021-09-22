@@ -35,7 +35,7 @@
             <td>{{ flag.info.comment }}</td>
             <td>
                 {% if flag.meta.plot_path %}
-                <a href="{% static flag.meta.plot_path %}"><img src="{% static flag.meta.plot_path %}" style="max-height: 100px; max-width: 200px;"/></a>
+                <a href="{{ flag.meta.plot_path }}"><img src="{{ flag.meta.plot_path }}" style="max-height: 100px; max-width: 200px;"/></a>
                 {% endif %}
             </td>
             {% if can_edit_flags %}

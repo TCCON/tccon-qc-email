@@ -92,7 +92,6 @@ class TypeRestrictedFileField(FileField):
 
     def clean(self, *args, **kwargs):
         data = super().clean(*args, **kwargs)
-        import pdb; pdb.set_trace()
         file = data.file
         try:
             content_type = data.content_type

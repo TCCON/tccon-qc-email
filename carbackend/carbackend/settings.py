@@ -206,14 +206,37 @@ elif VM == Vms.TCCONDATA:
     LOGIN_REDIRECT_URL = '/metadata/siteinfo/'
 
 if VM == Vms.TCCONDATA:
+    # This is the path to the .json file that has the TCCON site metadata (like release lag, citation, etc)
+    # The directory it is in needs to be writable by the Django process so that backups of this file can be
+    # made
     SITE_INFO_FILE = Path('/var/www/tccon-metadata/site_info.json')
+
+    # This is the path to the .json file that has the list of time periods flagged during QA/QC. Like the
+    # site info file, its directory needs to be writable to the Django process.
     RELEASE_FLAGS_FILE = Path('/var/www/tccon-metadata/release_flags.json')
+
+    # This is the path to the .json file that maps numeric flag values for the release/manual flags to their
+    # reasons. This way `write_netcdf` and the portal are guaranteed to use the same mapping. It does not 
+    # need to be in a writable location, only readable.
     RELEASE_FLAGS_DEF_FILE = Path('/var/www/tccon-metadata/release_flag_definitions.json')
+
+    # This is the path to a .json file that specifies certain configuration elements that we might want to
+    # change without having to reload the Django process, such as the point of contact and the maximum release
+    # lag.
     RUNTIME_SETTINGS_FILE = BASE_DIR / 'metadata_config.json'
+
+    # This is where plots uploaded to support the release flag decisions will be save. It must be writable to
+    # the Django process. 
     FLAG_PLOT_DIRECTORY = Path('/data/tccon/release_flags_uploaded_plots')
+
+    # This is the URL where the plots uploaded for the release flags will be served from. It should have a leading
+    # and trailing slash. Like STATIC_URL and STATIC_ROOT, you will need to set up the Internet-facing web server 
+    # to alias this path to FLAG_PLOT_DIRECTORY.
+    FLAG_PLOT_URL = '/rflagplots/'
 else:
     SITE_INFO_FILE = BASE_DIR / 'site_info.json'
     RELEASE_FLAGS_FILE = BASE_DIR / 'release_flags.json'
     RELEASE_FLAGS_DEF_FILE = BASE_DIR / 'release_flag_definitions.json'
     RUNTIME_SETTINGS_FILE = BASE_DIR / 'metadata_config.json'
     FLAG_PLOT_DIRECTORY = None
+    FLAG_PLOT_URL = None

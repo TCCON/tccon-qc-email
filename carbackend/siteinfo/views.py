@@ -223,7 +223,7 @@ class ViewReleaseFlags(View):
             meta['n_str'] = str(meta['n'])
             meta['start_date'] = dt.strptime(start_str, '%Y%m%d').date()
             meta['end_date'] = dt.strptime(end_str, '%Y%m%d').date()
-            meta['plot_path'] = 'plots/' + v['plot'] if 'plot' in v else None
+            meta['plot_path'] = settings.FLAG_PLOT_URL + v['plot'] if 'plot' in v else None
 
             site_flags.append({'info': v, 'meta': meta})
 
