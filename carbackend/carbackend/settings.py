@@ -86,6 +86,7 @@ if ENABLE_SITE_METADATA:
     INSTALLED_APPS.append('siteinfo.apps.SiteinfoConfig')
 
 INSTALLED_APPS.extend([
+    'tcconauth.apps.TcconAuthConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -187,22 +188,27 @@ if VM == Vms.PARKFALLS:
 
     DEFAULT_FROM_EMAIL = 'sitestatus@parkfalls.gps.caltech.edu'
     SERVER_EMAIL = 'sitestatusadmin@parkfalls.gps.caltech.edu'
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = 'smtp.gps.caltech.edu'
-    EMAIL_PORT = 25
-    EMAIL_HOST_USER = None
-    EMAIL_HOST_PASSWORD = None
-    EMAIL_USE_TLS = None
-    EMAIL_USE_SSL = None
-    EMAIL_SSL_KEYFILE = None
-    EMAIL_TIMEOUT = None
+    
 
 elif VM == Vms.TCCONDATA:
     STATIC_URL = '/djstatic/'
     STATIC_ROOT = '/var/www/siteinfo-portal/static'
 
+    DEFAULT_FROM_EMAIL = 'siteinfo@tccondata.gps.caltech.edu'
+    SERVER_EMAIL = 'siteinfoadmin@tccondata.gps.caltech.edu'
 else:
     STATIC_URL = '/static/'
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gps.caltech.edu'
+EMAIL_PORT = 25
+EMAIL_HOST_USER = None
+EMAIL_HOST_PASSWORD = None
+EMAIL_USE_TLS = None
+EMAIL_USE_SSL = None
+EMAIL_SSL_KEYFILE = None
+EMAIL_TIMEOUT = None
 
 CACHES = {
     'default': {

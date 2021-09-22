@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Login to TCCON site status</title>
+    <title>Login to TCCON status or metadata</title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/opstat.css' %}">
 </head>
 <body>
     <div class="cr">
-        <h1>Login to TCCON site status pages</h1>
+        <h1>Login to TCCON site status/metadata pages</h1>
 
         {% if form.errors %}
         <p>Your username and password didn't match. Please try again.</p>
@@ -45,7 +45,7 @@
         </tr>
         </table>
         </form>
-        <p><a href="{% url 'password_reset' %}?next={% url 'opstat:index' %}">Lost password?</a></p>
+        <p><a href="{% url 'password_reset' %}">Lost password?</a></p>
     </div>
 </body>
 </html>
