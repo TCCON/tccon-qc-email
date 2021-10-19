@@ -58,6 +58,7 @@ class SiteStatus(models.Model):
             ("tk_status", "Can update the Tsukuba site status"),
             ("we_status", "Can update the Jena site status"),
             ("wg_status", "Can update the Wollongong site status"),
+            ("xh_status", "Can update the Xianghe site status"),
             ("yk_status", "Can update the Yekaterinburg site status"),
             ("zs_status", "Can update the Zugspitze site status"),
         ]
