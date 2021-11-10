@@ -3,6 +3,7 @@ import json
 from django.conf import settings
 from django import forms
 from django.forms import ModelForm, Form, FileField, TextInput
+from django.forms import formset_factory
 from .models import SiteInfoUpdate, InfoFileLocks
 from . import utils
 
@@ -81,6 +82,19 @@ def _get_flag_name_choices():
 def _get_flag_values():
     with open(settings.RELEASE_FLAGS_DEF_FILE) as f:
         return json.load(f)['definitions']
+
+
+class BookForm(forms.Form):
+    name = forms.CharField(
+        label='Book name',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter Book Name Here'
+        })
+    )
+
+
+BookFormset = formset_factory(BookForm)
 
 
 class TypeRestrictedFileField(FileField):
