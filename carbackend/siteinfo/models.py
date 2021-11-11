@@ -111,6 +111,15 @@ class InfoFileLocks(models.Model):
         return cls.objects.execute(json_file, callback)
 
     @classmethod
+    def read_metadata_file(cls, metadata_file):
+        def callback():
+            json_file = settings.METADATA_DIR / metadata_file
+            with open(json_file) as f:
+                return json.load(f)
+
+        return cls.objects.execute(settings.METADATA_DIR, callback)
+
+    @classmethod
     def update_metadata_repo(cls, metadata_file, metadata_dict, **kwargs):
         def callback():
             json_file = settings.METADATA_DIR / metadata_file

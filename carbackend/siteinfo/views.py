@@ -118,7 +118,7 @@ class EditSiteInfo(View):
 
         # These will be put into context as {key}_formset
         doi_formsets = {
-            'creator': CreatorFormset(prefix='creatorsForm')
+            'creators': self._get_doi_formset(user, site_id, CreatorFormset)
         }
 
         #import pdb; pdb.set_trace()
@@ -133,7 +133,7 @@ class EditSiteInfo(View):
         # Note that is it important the prefixes match those in the get function,
         # or the post data won't match up
         doi_formsets = {
-            'creator': CreatorFormset(request.POST, prefix='creatorsForm')
+            'creators': self._get_doi_formset(request.user, site_id, CreatorFormset, post_data=request.POST)
         }
 
         # Only submit changes if all of the various forms are valid
@@ -161,17 +161,19 @@ class EditSiteInfo(View):
 
         return update
 
-    @staticmethod
-    def _save_doi_metadata(request, doi_formsets, site_id, site_long_name):
-        doi_metadata = {
-            'creators': []
-        }
-
-        for form in doi_formsets['creator']:
-            doi_metadata['creators'].append(form.to_dict())
-
-        metadata_json_file = f'{site_id}_{site_long_name}.json'
+    @classmethod
+    def _save_doi_metadata(cls, request, doi_formsets, site_id, site_long_name):
+        doi_metadata = {k: v.to_list() for k, v in doi_formsets.items()}
+        metadata_json_file = cls._site_metadata_file(site_id, site_long_name)
         InfoFileLocks.update_metadata_repo(metadata_json_file, doi_metadata)
+
+    @staticmethod
+    def _site_metadata_file(site_id, site_long_name=None):
+        if site_long_name is None:
+            site_info = _get_site_info(site_id)
+            site_long_name = site_info['long_name']
+
+        return f'{site_id}_{site_long_name}.json'
 
     @staticmethod
     def _get_form(user, site_id, post_data=None):
@@ -190,6 +192,20 @@ class EditSiteInfo(View):
                 return SiteInfoUpdateForm(post_data)
             else:
                 raise Http404('Sorry, you cannot access the information form for site "{}"'.format(site_id))
+
+    @classmethod
+    def _get_doi_formset(cls, user, site_id, formset_cls, post_data=None):
+        if not _can_edit_all_site_info(user, site_id) and not _can_edit_site(user, site_id):
+            raise Http404('Sorry, you cannot access the information form for site "{}"'.format(site_id))
+
+        metadata_file = cls._site_metadata_file(site_id)
+        cite_schema = InfoFileLocks.read_metadata_file(metadata_file)
+        creators_list = formset_cls.cite_schema_to_list(cite_schema)
+
+        if post_data is None:
+            return formset_cls(initial=creators_list)
+        else:
+            return formset_cls(post_data, initial=creators_list)
 
     @staticmethod
     def _write_site_info(update, site_id):

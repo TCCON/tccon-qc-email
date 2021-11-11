@@ -150,8 +150,54 @@ class CreatorForm(forms.Form):
             })
         return json_dict
 
+    @staticmethod
+    def cite_schema_to_dict(cite_schema_dict):
+        family_name, given_name = cite_schema_dict['name'].split(',', maxsplit=1)
+        affiliation = cite_schema_dict['affiliation'][0]['name']
+        orcid = None
+        researcher_id = None
+        for identifier in cite_schema_dict['nameIdentifiers']:
+            if identifier['nameIdentifierScheme'] == 'ORCID':
+                orcid = identifier['nameIdentifier']
+            elif identifier['nameIdentifierScheme'] == 'ResearcherID':
+                researcher_id = identifier['nameIdentifier']
 
-CreatorFormset = formset_factory(CreatorForm, can_delete=True)
+        form_dict = {
+            'family_name': family_name,
+            'given_name': given_name,
+            'affiliation': affiliation
+        }
+
+        if orcid:
+            form_dict['orcid'] = orcid
+        if researcher_id:
+            form_dict['researcher_id'] = researcher_id
+
+        return form_dict
+
+
+class CreatorBaseFormset(forms.BaseFormSet):
+    def __init__(self, *args, prefix='creatorsForm', **kwargs):
+        super().__init__(*args, prefix=prefix, **kwargs)
+
+    @staticmethod
+    def cite_schema_to_list(cite_schema_dict):
+        creator_list = cite_schema_dict['creators']
+        return [CreatorForm.cite_schema_to_dict(creator) for creator in creator_list]
+
+    def to_list(self):
+        creators = []
+        for form in self:
+            # We need to skip empty forms - the formset validation will not check forms that weren't updated,
+            # but it won't remove them either. We also skip forms that should be deleted - I `get` DELETE because
+            # I might decide in the future to just remove rows to be deleted in Javascript, so they wouldn't show
+            # up, in which case I'd remove the DELETE field.
+            if len(form.cleaned_data) > 0 and not form.cleaned_data.get('DELETE', False):
+                creators.append(form.to_dict())
+        return creators
+
+
+CreatorFormset = formset_factory(CreatorForm, can_delete=True, formset=CreatorBaseFormset)
 
 
 class TypeRestrictedFileField(FileField):

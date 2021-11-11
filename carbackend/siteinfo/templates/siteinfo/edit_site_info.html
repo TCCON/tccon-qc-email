@@ -17,6 +17,7 @@
         function cloneMore(selector, prefix) {
             var newElement = $(selector).clone(true);
             var total = $('#id_' + prefix + '-TOTAL_FORMS').val();
+            console.log("total = ", total)
             // console.log(newElement.find(':input:not([type=button]):not([type=submit]):not([type=reset])'));
             // newElement.find(':input:not([type=button]):not([type=submit]):not([type=reset])').each(function() {
             newElement.find('input[type="text"]').each(function() {
@@ -98,10 +99,10 @@
 
         <br>
 
-        {{ creator_formset.management_form }}
+        {{ creators_formset.management_form }}
+        {% for form in creators_formset.forms %}
         <div class="form-row">
         <table class="pretty-table form-table">
-            {% for form in creator_formset %}
             <tr>
                 <th>{{form.family_name.label}}</th><td>{{form.family_name}}</td>
                 <th>{{form.given_name.label}}</th><td>{{form.given_name}}</td>
@@ -119,29 +120,9 @@
             </tr>
         </table>
         </div>
+        {% endfor %}
 
         <div class="cr"><button class="add-form-row link-button">Add another creator</button> </div>
-
-        <!--
-        <div class="row form-row spacer">
-            <div class="col-2">
-            <label>{{form.name.label}}</label>
-            </div>
-            <div class="col-4">
-                <div class="input-group">
-                    {{form.name}}
-                    <div class="input-group-append">
-                        <button class="btn btn-success add-form-row">+</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-        <div class="row spacer">
-            <div class="col-4 offset-2">
-                <button type="submit" class="btn btn-block btn-primary">Create</button>
-            </div>
-        </div>-->
 
         <br>
         <div class="cr">
