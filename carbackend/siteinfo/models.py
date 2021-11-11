@@ -2,6 +2,7 @@ from django.conf import settings
 from django.db import models, transaction
 from django.contrib.auth.models import User
 
+import git
 import json
 from pathlib import Path
 from time import sleep
@@ -120,13 +121,39 @@ class InfoFileLocks(models.Model):
         return cls.objects.execute(settings.METADATA_DIR, callback)
 
     @classmethod
-    def update_metadata_repo(cls, metadata_file, metadata_dict, **kwargs):
+    def update_metadata_repo(cls, metadata_file, metadata_dict, username, **kwargs):
         def callback():
+            if has_file_changed():
+                pre_commit_msg = f'Commit state of {metadata_file} before change submitted by {username}'
+                commit_metadata_changes(pre_commit_msg)
+
             json_file = settings.METADATA_DIR / metadata_file
             with open(json_file, 'w') as f:
                 json.dump(metadata_dict, f, **kwargs)
 
-            # Eventually we will create a new commit in the metadata dir git repo with these changes
+            post_commit_msg = f'Commit change to {metadata_file} submitted by {username}'
+            commit_metadata_changes(post_commit_msg)
+
+        def commit_metadata_changes(message):
+            try:
+                repo = git.Repo(settings.METADATA_DIR)
+            except git.InvalidGitRepositoryError:
+                print('WARNING: cannot commit changes to metadata; metadata directory is not a Git repo!')
+                return
+
+            repo.git.add(metadata_file)
+            repo.git.commit(message=message)
+
+        def has_file_changed():
+            try:
+                repo = git.Repo(settings.METADATA_DIR)
+            except git.InvalidGitRepositoryError:
+                print('WARNING: cannot commit changes to metadata; metadata directory is not a Git repo!')
+                return
+
+            # Difference the working directory against the index, checking for only our
+            # file.
+            return len(repo.index.diff(None, paths=metadata_file)) > 0
 
         return cls.objects.execute(settings.METADATA_DIR, callback)
 

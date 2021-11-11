@@ -165,7 +165,7 @@ class EditSiteInfo(View):
     def _save_doi_metadata(cls, request, doi_formsets, site_id, site_long_name):
         doi_metadata = {k: v.to_list() for k, v in doi_formsets.items()}
         metadata_json_file = cls._site_metadata_file(site_id, site_long_name)
-        InfoFileLocks.update_metadata_repo(metadata_json_file, doi_metadata)
+        InfoFileLocks.update_metadata_repo(metadata_json_file, doi_metadata, request.user)
 
     @staticmethod
     def _site_metadata_file(site_id, site_long_name=None):
