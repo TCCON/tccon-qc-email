@@ -58,12 +58,12 @@
         }
         $(document).on('click', '.add-form-row', function(e){
             e.preventDefault();
-            cloneMore('.form-row:last', 'form');
+            cloneMore('.form-row:last', 'creatorsForm');
             return false;
         });
         $(document).on('click', '.remove-form-row', function(e){
             e.preventDefault();
-            deleteForm('form', $(this));
+            deleteForm('creatorsForm', $(this));
             return false;
         });
     </script>
@@ -97,20 +97,32 @@
         </table>
 
         <br>
-        <div class="cr">
-        <button type="submit" class="link-button">Submit changes</button>
-        </div>
-    </form>
 
-    <br>
-    <div class="cr">
-        <form action="{% url 'siteinfo:index' %}"><button type="submit" class="link-button">Back to main</button></form>
-    </div>
-    
-    <form class="form-horizontal" method="POST" action="">
-        {% csrf_token %}
-        {{ formset.management_form }}
-        {% for form in formset %}
+        {{ creator_formset.management_form }}
+        <div class="form-row">
+        <table class="pretty-table form-table">
+            {% for form in creator_formset %}
+            <tr>
+                <th>{{form.family_name.label}}</th><td>{{form.family_name}}</td>
+                <th>{{form.given_name.label}}</th><td>{{form.given_name}}</td>
+                <td></td><th>{{form.DELETE.label}}</th>
+            </tr>
+            <tr>
+                <th>{{form.affiliation.label}}</th><td colspan="3">{{form.affiliation}}</td>
+                <td></td>
+                <td rowspan="2">{{form.DELETE}}</td>
+            </tr>
+            <tr>
+                <th>{{form.orcid.label}}</th><td>{{form.orcid}}</td>
+                <th>{{form.researcher_id.label}}</th><td>{{form.researcher_id}}</td>
+                <td></td>
+            </tr>
+        </table>
+        </div>
+
+        <div class="cr"><button class="add-form-row link-button">Add another creator</button> </div>
+
+        <!--
         <div class="row form-row spacer">
             <div class="col-2">
             <label>{{form.name.label}}</label>
@@ -129,7 +141,18 @@
             <div class="col-4 offset-2">
                 <button type="submit" class="btn btn-block btn-primary">Create</button>
             </div>
+        </div>-->
+
+        <br>
+        <div class="cr">
+        <button type="submit" class="link-button">Submit changes</button>
         </div>
     </form>
+
+    <br>
+    <div class="cr">
+        <form action="{% url 'siteinfo:index' %}"><button type="submit" class="link-button">Back to main</button></form>
+    </div>
+    <br>
 </body>
 </html>

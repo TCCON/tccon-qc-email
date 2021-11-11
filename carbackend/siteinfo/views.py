@@ -8,7 +8,7 @@ from datetime import datetime as dt
 import json
 import re
 
-from .forms import SiteInfoUpdateForm, SiteInfoUpdateStaffForm, ReleaseFlagUpdateForm
+from .forms import SiteInfoUpdateForm, SiteInfoUpdateStaffForm, ReleaseFlagUpdateForm, CreatorFormset
 from .models import SiteInfoUpdate, InfoFileLocks
 from . import utils
 
@@ -115,28 +115,63 @@ class EditSiteInfo(View):
 
         site_info = _get_site_info(site_id)
         form = self._get_form(user, site_id)
-        context = self._make_context(user, form, site_id, site_info)
+
+        # These will be put into context as {key}_formset
+        doi_formsets = {
+            'creator': CreatorFormset(prefix='creatorsForm')
+        }
+
+        #import pdb; pdb.set_trace()
+
+        context = self._make_context(user, form, doi_formsets, site_id, site_info)
         return render(request, 'siteinfo/edit_site_info.html', context=context)
 
     def post(self, request, site_id):
-        form = self._get_form(request.user, site_id, post_data=request.POST)
-        if form.is_valid():
-            # form.save(user=request.user, site_info=self._get_site_info(site_id))
-            site_info = _get_site_info(site_id)
-            update = form.save(commit=False)
-            update.user_updated = request.user
-            update.site_id = site_id
-            for field in form.fixed_fields():
-                setattr(update, field, site_info[field])
+        import pdb; pdb.set_trace()
+        netcdf_form = self._get_form(request.user, site_id, post_data=request.POST)
 
-            with transaction.atomic():
-                self._write_site_info(update, site_id)
-                update.save()
+        # Note that is it important the prefixes match those in the get function,
+        # or the post data won't match up
+        doi_formsets = {
+            'creator': CreatorFormset(request.POST, prefix='creatorsForm')
+        }
+
+        # Only submit changes if all of the various forms are valid
+        if netcdf_form.is_valid() and all(fs.is_valid() for fs in doi_formsets.values()):
+            updated_site_info = self._save_netcdf_metadata(request, netcdf_form, site_id)
+            self._save_doi_metadata(request, doi_formsets, site_id, updated_site_info.long_name)
             url = '{}/?msg=success'.format(reverse('siteinfo:view', args=(site_id,)).rstrip('?').rstrip('/'))
             return HttpResponseRedirect(url)
         else:
-            context = self._make_context(request.user, form, site_id)
+            context = self._make_context(request.user, netcdf_form, doi_formsets, site_id)
             return render(request, 'siteinfo/edit_site_info.html', context=context)
+
+    def _save_netcdf_metadata(self, request, form, site_id):
+        # form.save(user=request.user, site_info=self._get_site_info(site_id))
+        site_info = _get_site_info(site_id)
+        update = form.save(commit=False)
+        update.user_updated = request.user
+        update.site_id = site_id
+        for field in form.fixed_fields():
+            setattr(update, field, site_info[field])
+
+        with transaction.atomic():
+            self._write_site_info(update, site_id)
+            # update.save()  # UNDO
+
+        return update
+
+    @staticmethod
+    def _save_doi_metadata(request, doi_formsets, site_id, site_long_name):
+        doi_metadata = {
+            'creators': []
+        }
+
+        for form in doi_formsets['creator']:
+            doi_metadata['creators'].append(form.to_dict())
+
+        metadata_json_file = f'{site_id}_{site_long_name}.json'
+        InfoFileLocks.update_metadata_repo(metadata_json_file, doi_metadata)
 
     @staticmethod
     def _get_form(user, site_id, post_data=None):
@@ -166,7 +201,7 @@ class EditSiteInfo(View):
         utils.backup_file_rolling(settings.SITE_INFO_FILE)
         InfoFileLocks.write_json_file(settings.SITE_INFO_FILE, all_site_info, indent=4)
 
-    def _make_context(self, user, form, site_id, site_info=None):
+    def _make_context(self, user, form, doi_formsets, site_id, site_info=None):
         if site_info is None:
             site_info = _get_site_info(site_id)
 
@@ -183,6 +218,10 @@ class EditSiteInfo(View):
             'contact': utils.get_contact(),
             'can_edit_all': _can_edit_all_site_info(user, site_id)
         }
+
+        # Add all the extra DOI formsets directly into the context dictionary
+        for key, formset in doi_formsets.items():
+            context[f'{key}_formset'] = formset
         return context
 
     @staticmethod

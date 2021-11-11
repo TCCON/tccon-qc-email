@@ -84,17 +84,74 @@ def _get_flag_values():
         return json.load(f)['definitions']
 
 
-class BookForm(forms.Form):
-    name = forms.CharField(
-        label='Book name',
+class CreatorForm(forms.Form):
+    _base_field_width = '15em'
+
+    family_name = forms.CharField(
+        label='Family name',
         widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Enter Book Name Here'
+            # 'class': 'form-control',  # can update this if I write CSS for it
+            'placeholder': 'Enter family name here',
+            'style': f'width:{_base_field_width};'
         })
     )
 
+    given_name = forms.CharField(
+        label='Given name(s)',
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Enter given name(s) or initials here.',
+            'style': f'width:{_base_field_width};'
+        })
+    )
 
-BookFormset = formset_factory(BookForm)
+    affiliation = forms.CharField(
+        label='Affiliation',
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Enter affiliation (e.g. institute, city, [state], country) here',
+            'style': f'width:{3*_base_field_width};'
+        })
+    )
+
+    orcid = forms.CharField(
+        label='ORCID (optional)',
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Enter ORCID here',
+            'style': f'width:{_base_field_width};'
+        })
+    )
+
+    researcher_id = forms.CharField(
+        label='Researcher ID (optional)',
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Enter Researcher ID here',
+            'style': f'width:{_base_field_width};'
+        })
+    )
+
+    def to_dict(self):
+        data = self.cleaned_data
+        json_dict = {
+            'affiliation': [{'name': data['affiliation']}],
+            'name': f'{data["family_name"]}, {data["given_name"]}',
+            'nameIdentifiers': []
+        }
+
+        if data.get('orcid'):
+            json_dict['nameIdentifiers'].append({
+                'nameIdentifier': data.get('orcid'),
+                'nameIdentifierScheme': 'ORCID'
+            })
+        if data.get('researcher_id'):
+            json_dict['nameIdentifiers'].append({
+                'nameIdentifier': data.get('researcher_id'),
+                'nameIdentifierScheme': 'ResearcherID'
+            })
+        return json_dict
+
+
+CreatorFormset = formset_factory(CreatorForm, can_delete=True)
 
 
 class TypeRestrictedFileField(FileField):

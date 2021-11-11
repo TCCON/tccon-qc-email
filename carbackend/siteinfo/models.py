@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models, transaction
 from django.contrib.auth.models import User
 
@@ -108,4 +109,15 @@ class InfoFileLocks(models.Model):
                 json.dump(json_data, f, **kwargs)
 
         return cls.objects.execute(json_file, callback)
+
+    @classmethod
+    def update_metadata_repo(cls, metadata_file, metadata_dict, **kwargs):
+        def callback():
+            json_file = settings.METADATA_DIR / metadata_file
+            with open(json_file, 'w') as f:
+                json.dump(metadata_dict, f, **kwargs)
+
+            # Eventually we will create a new commit in the metadata dir git repo with these changes
+
+        return cls.objects.execute(settings.METADATA_DIR, callback)
 
