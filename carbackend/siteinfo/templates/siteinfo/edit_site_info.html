@@ -124,6 +124,28 @@
 
         <div class="cr"><button class="add-form-row link-button">Add another creator</button> </div>
 
+        {{ contributors_formset.management_form }}
+        {% for form in contributors_formset.forms %}
+        <div class="form-row">
+        <table class="pretty-table form-table">
+            <tr>
+                <th>{{form.family_name.label}}</th><td>{{form.family_name}}</td>
+                <th>{{form.given_name.label}}</th><td>{{form.given_name}}</td>
+                <th>{{form.contributor_type.label}}</th><td>{{form.contributor_type}}</td>
+            </tr>
+            <tr>
+                <th>{{form.affiliation.label}}</th><td colspan="3">{{form.affiliation}}</td>
+                <td></td><td></td>
+            </tr>
+            <tr>
+                <th>{{form.orcid.label}}</th><td>{{form.orcid}}</td>
+                <th>{{form.researcher_id.label}}</th><td>{{form.researcher_id}}</td>
+                <td></td><td></td>
+            </tr>
+        </table>
+        </div>
+        {% endfor %}
+
         <br>
         <div class="cr">
         <button type="submit" class="link-button">Submit changes</button>

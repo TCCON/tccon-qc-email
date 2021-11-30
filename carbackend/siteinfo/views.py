@@ -8,9 +8,9 @@ from datetime import datetime as dt
 import json
 import re
 
-from .forms import SiteInfoUpdateForm, SiteInfoUpdateStaffForm, ReleaseFlagUpdateForm, CreatorFormset
+from .forms import SiteInfoUpdateForm, SiteInfoUpdateStaffForm, ReleaseFlagUpdateForm
 from .models import SiteInfoUpdate, InfoFileLocks
-from . import utils
+from . import utils, forms
 
 
 class SiteInfoList(View):
@@ -117,11 +117,9 @@ class EditSiteInfo(View):
         form = self._get_form(user, site_id)
 
         # These will be put into context as {key}_formset
-        doi_formsets = {
-            'creators': self._get_doi_formset(user, site_id, CreatorFormset)
-        }
+        doi_formsets = self._make_doi_formset_dict(request, site_id)
 
-        #import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
 
         context = self._make_context(user, form, doi_formsets, site_id, site_info)
         return render(request, 'siteinfo/edit_site_info.html', context=context)
@@ -130,11 +128,7 @@ class EditSiteInfo(View):
         import pdb; pdb.set_trace()
         netcdf_form = self._get_form(request.user, site_id, post_data=request.POST)
 
-        # Note that is it important the prefixes match those in the get function,
-        # or the post data won't match up
-        doi_formsets = {
-            'creators': self._get_doi_formset(request.user, site_id, CreatorFormset, post_data=request.POST)
-        }
+        doi_formsets = self._make_doi_formset_dict(request, site_id, with_post=True)
 
         # Only submit changes if all of the various forms are valid
         if netcdf_form.is_valid() and all(fs.is_valid() for fs in doi_formsets.values()):
@@ -192,6 +186,20 @@ class EditSiteInfo(View):
                 return SiteInfoUpdateForm(post_data)
             else:
                 raise Http404('Sorry, you cannot access the information form for site "{}"'.format(site_id))
+
+    @classmethod
+    def _make_doi_formset_dict(cls, request, site_id, with_post=False):
+        if with_post:
+            post_data = request.POST
+        else:
+            post_data = None
+
+        doi_formsets = {
+            'creators': cls._get_doi_formset(request.user, site_id, forms.CreatorFormset, post_data=post_data),
+            'contributors': cls._get_doi_formset(request.user, site_id, forms.ContributorFormset, post_data=post_data)
+        }
+
+        return doi_formsets
 
     @classmethod
     def _get_doi_formset(cls, user, site_id, formset_cls, post_data=None):

@@ -11,6 +11,7 @@ from datetime import datetime
 import os
 import re
 _this_year = datetime.today().year
+_base_field_width = '15em'
 
 
 class SiteInfoUpdateForm(ModelForm):
@@ -85,7 +86,7 @@ def _get_flag_values():
 
 
 class CreatorForm(forms.Form):
-    _base_field_width = '15em'
+
 
     family_name = forms.CharField(
         label='Family name',
@@ -108,7 +109,7 @@ class CreatorForm(forms.Form):
         label='Affiliation',
         widget=forms.TextInput(attrs={
             'placeholder': 'Enter affiliation (e.g. institute, city, [state], country) here',
-            'style': f'width:{3*_base_field_width};'
+            'style': f'width:{3 * _base_field_width};'
         })
     )
 
@@ -150,8 +151,8 @@ class CreatorForm(forms.Form):
             })
         return json_dict
 
-    @staticmethod
-    def cite_schema_to_dict(cite_schema_dict):
+    @classmethod
+    def cite_schema_to_dict(cls, cite_schema_dict):
         family_name, given_name = cite_schema_dict['name'].split(',', maxsplit=1)
         affiliation = cite_schema_dict['affiliation'][0]['name']
         orcid = None
@@ -180,24 +181,92 @@ class CreatorBaseFormset(forms.BaseFormSet):
     def __init__(self, *args, prefix='creatorsForm', **kwargs):
         super().__init__(*args, prefix=prefix, **kwargs)
 
-    @staticmethod
-    def cite_schema_to_list(cite_schema_dict):
+    @classmethod
+    def cite_schema_to_list(cls, cite_schema_dict):
         creator_list = cite_schema_dict['creators']
         return [CreatorForm.cite_schema_to_dict(creator) for creator in creator_list]
 
     def to_list(self):
-        creators = []
+        people = []
         for form in self:
             # We need to skip empty forms - the formset validation will not check forms that weren't updated,
             # but it won't remove them either. We also skip forms that should be deleted - I `get` DELETE because
             # I might decide in the future to just remove rows to be deleted in Javascript, so they wouldn't show
             # up, in which case I'd remove the DELETE field.
             if len(form.cleaned_data) > 0 and not form.cleaned_data.get('DELETE', False):
-                creators.append(form.to_dict())
-        return creators
+                people.append(form.to_dict())
+        return people
+
+
+class ContributorForm(CreatorForm):
+    # A contributor has most of the same fields as a creator, with one extra: a type
+    TYPE_CONTACT_PERSON = 'ContactPerson'
+    TYPE_DATA_COL = 'DataCollector'
+    TYPE_DATA_CUR = 'DataCurator'
+    TYPE_DATA_MAN = 'DataManager'
+    TYPE_DIST = 'Distributor'
+    TYPE_ED = 'Editor'
+    TYPE_HOST_INST = 'HostingInstitution'
+    TYPE_PROD = 'Producer'
+    TYPE_PROJ_LEAD = 'ProjectLeader'
+    TYPE_PROJ_MAN = 'ProjectManager'
+    TYPE_PROJ_MEM = 'ProjectMember'
+    TYPE_REG_AGCY = 'RegistrationAgency'
+    TYPE_REG_AUTH = 'RegistrationAuthority'
+    TYPE_REL_PERS = 'RelatedPerson'
+    TYPE_RES = 'Researcher'
+    TYPE_RES_GRP = 'ResearchGroup'
+    TYPE_RIGHTS_HOLD = 'RightsHolder'
+
+    contributor_type = forms.ChoiceField(choices=[
+        (TYPE_CONTACT_PERSON, 'Contact person'),
+        (TYPE_DATA_COL, 'Data collector'),
+        (TYPE_DATA_CUR, 'Data curator'),
+        (TYPE_DATA_MAN, 'Data manager'),
+        (TYPE_DIST, 'Distributor'),
+        (TYPE_ED, 'Editor'),
+        (TYPE_HOST_INST, 'Hosting institution'),
+        (TYPE_PROD, 'Producer'),
+        (TYPE_PROJ_LEAD, 'Project leader'),
+        (TYPE_PROJ_MAN, 'Project manager'),
+        (TYPE_PROJ_MEM, 'Project member'),
+        (TYPE_REG_AGCY, 'Registration agency'),
+        (TYPE_REG_AUTH, 'Registration authority'),
+        (TYPE_REL_PERS, 'Related person'),
+        (TYPE_RES, 'Researcher'),
+        (TYPE_RES_GRP, 'Research group'),
+        (TYPE_RIGHTS_HOLD, 'Rights holder')
+    ])
+
+    def to_dict(self):
+        json_dict = super().to_dict()
+        json_dict['contributorType'] = self.cleaned_data['contributor_type']
+        return json_dict
+
+    @classmethod
+    def cite_schema_to_dict(cls, cite_schema_dict):
+        import pdb; pdb.set_trace()
+        form_dict = super().cite_schema_to_dict(cite_schema_dict)
+        form_dict['contributor_type'] = cite_schema_dict['contributorType']
+        return form_dict
+
+
+class ContributorBaseFormset(CreatorBaseFormset):
+    def __init__(self, *args, prefix='contributorsForm', **kwargs):
+        super().__init__(*args, prefix=prefix, **kwargs)
+
+    @classmethod
+    def cite_schema_to_list(cls, cite_schema_dict):
+        contributor_list = cite_schema_dict['contributors']
+        return [ContributorForm.cite_schema_to_dict(contributor) for contributor in contributor_list]
+
+    def to_list(self):
+        import pdb; pdb.set_trace()
+        return super().to_list()
 
 
 CreatorFormset = formset_factory(CreatorForm, can_delete=True, formset=CreatorBaseFormset)
+ContributorFormset = formset_factory(ContributorForm, can_delete=True, formset=ContributorBaseFormset)
 
 
 class TypeRestrictedFileField(FileField):
