@@ -57,18 +57,18 @@ function getFormByIndex(selector, index) {
     return forms.get(index);
 }
 
-function cloneMore(selector, prefix) {
+function cloneMore(selector, prefix, btn) {
     // `selector` would be something like ".form-row:last", i.e. the last instance of an element with class "form-row"
     // Create a new element that includes data & events based on that
-    const sel_last = `${selector}:last`
-    var newElement = $(sel_last).clone(false);
+    var currElement = btn.closest(selector);
+    var newElement = currElement.clone(false);
 
     // The management form for a Django form set creates a hidden input that has an id attribute like
     // "id_creatorsForm-TOTAL_FORMS". It's value is the total number of forms in the formset.
     var total = $('#id_' + prefix + '-TOTAL_FORMS').val();
 
     // Place the new form after the one we cloned.
-    $(sel_last).after(newElement);
+    currElement.after(newElement);
 
     updateAllChildrenIndices(selector, prefix);
 
