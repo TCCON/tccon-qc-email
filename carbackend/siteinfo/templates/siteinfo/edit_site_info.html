@@ -102,6 +102,7 @@
         </table>
 
         <br>
+
         <h2>DOI metadata</h2>
         <p>The metadata below is only contained in the DOI record for your site.</p>
 
@@ -117,10 +118,18 @@
                 <th>{{form.orcid.label}}</th><td>{{form.orcid}}</td>
             </tr>
             <tr>
-                <td style="width: 7rem;">
-                    <img src="{% static 'img/delete-button.svg' %}" class="line-img">
-                    <img src="{% static 'img/up-button.svg' %}" class="line-img">
-                    <img src="{% static 'img/down-button.svg' %}" class="line-img">
+                <td style="width: 9rem;">
+                    <span class="tooltip"><img src="{% static 'img/add-button.svg' %}" class="line-img">
+                    <span class="tooltiptext">Add a creator</span></span>
+
+                    <span class="tooltip"><img src="{% static 'img/up-button.svg' %}" class="line-img">
+                    <span class="tooltiptext">Move this creator up</span></span>
+
+                    <span class="tooltip"><img src="{% static 'img/down-button.svg' %}" class="line-img">
+                    <span class="tooltiptext">Move this creator down</span></span>
+
+                    <span class="tooltip"><img src="{% static 'img/delete-button.svg' %}" class="line-img">
+                    <span class="tooltiptext">Delete this creator</span></span>
                 </td>
                 <th>{{form.affiliation.label}}</th><td colspan="3">{{form.affiliation}}</td>
                 <th>{{form.researcher_id.label}}</th><td>{{form.researcher_id}}</td>
@@ -146,10 +155,18 @@
                 <th>{{form.orcid.label}}</th><td>{{form.orcid}}</td>
             </tr>
             <tr>
-                <td style="width: 7rem;">
-                    <img src="{% static 'img/delete-button.svg' %}" class="line-img">
-                    <img src="{% static 'img/up-button.svg' %}" class="line-img">
-                    <img src="{% static 'img/down-button.svg' %}" class="line-img">
+                <td style="width: 9rem;">
+                    <span class="tooltip"><img src="{% static 'img/add-button.svg' %}" class="line-img">
+                    <span class="tooltiptext">Add a contributor</span></span>
+
+                    <span class="tooltip"><img src="{% static 'img/up-button.svg' %}" class="line-img">
+                    <span class="tooltiptext">Move this contributor up</span></span>
+
+                    <span class="tooltip"><img src="{% static 'img/down-button.svg' %}" class="line-img">
+                    <span class="tooltiptext">Move this contributor down</span></span>
+
+                    <span class="tooltip"><img src="{% static 'img/delete-button.svg' %}" class="line-img">
+                    <span class="tooltiptext">Delete this contributor</span></span>
                 </td>
                 <th>{{form.affiliation.label}}</th><td colspan="5">{{form.affiliation}}</td>
                 <th>{{form.researcher_id.label}}</th><td>{{form.researcher_id}}</td>
