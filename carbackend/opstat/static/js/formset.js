@@ -22,6 +22,16 @@ function updateAllChildrenIndices(selector, prefix) {
     }
 }
 
+function getFormIndex(form) {
+    var t = form.find('.line-number').get(0).innerText;
+    return parseInt(t) - 1;
+}
+
+function getFormByIndex(selector, index) {
+    var forms = $(selector);
+    return forms.get(index);
+}
+
 function cloneMore(selector, prefix) {
     // `selector` would be something like ".form-row:last", i.e. the last instance of an element with class "form-row"
     // Create a new element that includes data & events based on that
@@ -61,5 +71,27 @@ function deleteForm(prefix, selector, btn) {
 
         updateAllChildrenIndices(selector, prefix);
     }
+    return false;
+}
+
+function moveForm(prefix, selector, btn, direction) {
+    var nforms = $(selector).length;
+    var form = btn.closest(selector);
+    var curr_idx = getFormIndex(form);
+    var tgt_idx = curr_idx + direction;
+
+    console.log(`Moving form ${form[0]}`);
+
+    // Check that we're not trying to more the first form up or the last form down
+    if (tgt_idx < 0 || tgt_idx >= nforms) return false;
+
+    if (direction < 0) {
+        $(getFormByIndex(selector, tgt_idx)).before(form);
+    } else {
+        $(getFormByIndex(selector, tgt_idx)).after(form);
+    }
+
+    updateAllChildrenIndices(selector, prefix);
+
     return false;
 }

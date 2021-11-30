@@ -21,6 +21,18 @@
             return false;
         });
 
+        $(document).on('click', '.shift-creator-up', function(e){
+            e.preventDefault();
+            moveForm('creatorsForm', '.creator', $(this), -1);
+            return false;
+        });
+
+        $(document).on('click', '.shift-creator-down', function(e){
+            e.preventDefault();
+            moveForm('creatorsForm', '.creator', $(this), 1);
+            return false;
+        });
+
         // Contributor add/remove/move buttons //
         $(document).on('click', '.add-contributor-row', function(e){
             e.preventDefault();
@@ -31,6 +43,18 @@
         $(document).on('click', '.remove-contributor-row', function(e){
             e.preventDefault();
             deleteForm('contributorsForm', '.contributor', $(this));
+            return false;
+        });
+
+        $(document).on('click', '.shift-contributor-up', function(e){
+            e.preventDefault();
+            moveForm('contributorsForm', '.contributor', $(this), -1);
+            return false;
+        });
+
+        $(document).on('click', '.shift-contributor-down', function(e){
+            e.preventDefault();
+            moveForm('contributorsForm', '.contributor', $(this), 1);
             return false;
         });
     </script>
@@ -88,10 +112,10 @@
                     <span class="tooltip"><img src="{% static 'img/add-button.svg' %}" class="line-img add-creator-row">
                     <span class="tooltiptext">Add a creator</span></span>
 
-                    <span class="tooltip"><img src="{% static 'img/up-button.svg' %}" class="line-img">
+                    <span class="tooltip"><img src="{% static 'img/up-button.svg' %}" class="line-img shift-creator-up">
                     <span class="tooltiptext">Move this creator up</span></span>
 
-                    <span class="tooltip"><img src="{% static 'img/down-button.svg' %}" class="line-img">
+                    <span class="tooltip"><img src="{% static 'img/down-button.svg' %}" class="line-img shift-creator-down">
                     <span class="tooltiptext">Move this creator down</span></span>
 
                     <span class="tooltip"><img src="{% static 'img/delete-button.svg' %}" class="line-img remove-creator-row">
@@ -123,10 +147,10 @@
                     <span class="tooltip"><img src="{% static 'img/add-button.svg' %}" class="line-img add-contributor-row">
                     <span class="tooltiptext">Add a contributor</span></span>
 
-                    <span class="tooltip"><img src="{% static 'img/up-button.svg' %}" class="line-img">
+                    <span class="tooltip"><img src="{% static 'img/up-button.svg' %}" class="line-img shift-contributor-up">
                     <span class="tooltiptext">Move this contributor up</span></span>
 
-                    <span class="tooltip"><img src="{% static 'img/down-button.svg' %}" class="line-img">
+                    <span class="tooltip"><img src="{% static 'img/down-button.svg' %}" class="line-img shift-contributor-down">
                     <span class="tooltiptext">Move this contributor down</span></span>
 
                     <span class="tooltip"><img src="{% static 'img/delete-button.svg' %}" class="line-img remove-contributor-row">
