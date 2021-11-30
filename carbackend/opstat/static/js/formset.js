@@ -19,6 +19,31 @@ function updateAllChildrenIndices(selector, prefix) {
         $(forms.get(i)).find('.line-number').each(function() {
             $(this).text(i+1);
         })
+
+        // For these, we assume that the selector is e.g. ".creator"
+        // and we need e.g. ".shift-creator-up"
+        var sel2 = selector.slice(1);
+
+        // If this is the first row, hide the up arrow
+        if (i == 0) {
+            $(forms.get(i)).find(`.shift-${sel2}-up`).hide();
+        }else{
+            $(forms.get(i)).find(`.shift-${sel2}-up`).show();
+        }
+
+        // If the last row, hide the down arrow
+        if (i == forms.length - 1) {
+            $(forms.get(i)).find(`.shift-${sel2}-down`).hide();
+        }else{
+            $(forms.get(i)).find(`.shift-${sel2}-down`).show();
+        }
+
+        // If only one form, hide the delete button
+        if (forms.length == 1) {
+            $(forms.get(i)).find(`.remove-${sel2}-row`).hide();
+        }else{
+            $(forms.get(i)).find(`.remove-${sel2}-row`).show();
+        }
     }
 }
 
