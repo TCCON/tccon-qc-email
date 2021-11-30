@@ -6,65 +6,31 @@
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/opstat.css' %}">
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="{% static 'js/formset.js' %}"></script>
     <script type='text/javascript'>
-        function updateElementIndex(el, prefix, ndx) {
-            var id_regex = new RegExp('(' + prefix + '-\\d+)');
-            var replacement = prefix + '-' + ndx;
-            if ($(el).attr("for")) $(el).attr("for", $(el).attr("for").replace(id_regex, replacement));
-            if (el.id) el.id = el.id.replace(id_regex, replacement);
-            if (el.name) el.name = el.name.replace(id_regex, replacement);
-        }
-        function cloneMore(selector, prefix) {
-            var newElement = $(selector).clone(true);
-            var total = $('#id_' + prefix + '-TOTAL_FORMS').val();
-            console.log("total = ", total)
-            // console.log(newElement.find(':input:not([type=button]):not([type=submit]):not([type=reset])'));
-            // newElement.find(':input:not([type=button]):not([type=submit]):not([type=reset])').each(function() {
-            newElement.find('input[type="text"]').each(function() {
-                console.log($(this).attr('name'));
-                var name = $(this).attr('name').replace('-' + (total-1) + '-', '-' + total + '-');
-                var id = 'id_' + name;
-                $(this).attr({'name': name, 'id': id}).val('').removeAttr('checked');
-            });
-            newElement.find('label').each(function() {
-                var forValue = $(this).attr('for');
-                if (forValue) {
-                  forValue = forValue.replace('-' + (total-1) + '-', '-' + total + '-');
-                  $(this).attr({'for': forValue});
-                }
-            });
-            total++;
-            $('#id_' + prefix + '-TOTAL_FORMS').val(total);
-            $(selector).after(newElement);
-            var conditionRow = $('.form-row:not(:last)');
-            conditionRow.find('.btn.add-form-row')
-            .removeClass('btn-success').addClass('btn-danger')
-            .removeClass('add-form-row').addClass('remove-form-row')
-            .html('<span class="glyphicon glyphicon-minus" aria-hidden="true"></span>');
-            return false;
-        }
-        function deleteForm(prefix, btn) {
-            var total = parseInt($('#id_' + prefix + '-TOTAL_FORMS').val());
-            if (total > 1){
-                btn.closest('.form-row').remove();
-                var forms = $('.form-row');
-                $('#id_' + prefix + '-TOTAL_FORMS').val(forms.length);
-                for (var i=0, formCount=forms.length; i<formCount; i++) {
-                    $(forms.get(i)).find(':input').each(function() {
-                        updateElementIndex(this, prefix, i);
-                    });
-                }
-            }
-            return false;
-        }
-        $(document).on('click', '.add-form-row', function(e){
+        // Creator add/remove/move buttons //
+        $(document).on('click', '.add-creator-row', function(e){
             e.preventDefault();
-            cloneMore('.form-row:last', 'creatorsForm');
+            cloneMore('.creator:last', 'creatorsForm');
             return false;
         });
-        $(document).on('click', '.remove-form-row', function(e){
+
+        $(document).on('click', '.remove-creator-row', function(e){
             e.preventDefault();
-            deleteForm('creatorsForm', $(this));
+            deleteForm('creatorsForm', '.creator', $(this));
+            return false;
+        });
+
+        // Contributor add/remove/move buttons //
+        $(document).on('click', '.add-contributor-row', function(e){
+            e.preventDefault();
+            cloneMore('.contributor:last', 'contributorsForm');
+            return false;
+        });
+
+        $(document).on('click', '.remove-contributor-row', function(e){
+            e.preventDefault();
+            deleteForm('contributorsForm', '.contributor', $(this));
             return false;
         });
     </script>
@@ -109,7 +75,7 @@
         {{ creators_formset.management_form }}
         <div class="doi-metadata-section">Creators
         {% for form in creators_formset.forms %}
-        <div class="form-row">
+        <div class="form-row creator">
         <table class="pretty-table form-table">
             <tr>
                 <td><span class="line-number">{{forloop.counter}}</span></td>
@@ -119,7 +85,7 @@
             </tr>
             <tr>
                 <td style="width: 9rem;">
-                    <span class="tooltip"><img src="{% static 'img/add-button.svg' %}" class="line-img">
+                    <span class="tooltip"><img src="{% static 'img/add-button.svg' %}" class="line-img add-creator-row">
                     <span class="tooltiptext">Add a creator</span></span>
 
                     <span class="tooltip"><img src="{% static 'img/up-button.svg' %}" class="line-img">
@@ -128,7 +94,7 @@
                     <span class="tooltip"><img src="{% static 'img/down-button.svg' %}" class="line-img">
                     <span class="tooltiptext">Move this creator down</span></span>
 
-                    <span class="tooltip"><img src="{% static 'img/delete-button.svg' %}" class="line-img">
+                    <span class="tooltip"><img src="{% static 'img/delete-button.svg' %}" class="line-img remove-creator-row">
                     <span class="tooltiptext">Delete this creator</span></span>
                 </td>
                 <th>{{form.affiliation.label}}</th><td colspan="3">{{form.affiliation}}</td>
@@ -145,7 +111,7 @@
         <div class="doi-metadata-section">Contributors
         {% for form in contributors_formset.forms %}
 
-        <div class="form-row">
+        <div class="form-row contributor">
         <table class="pretty-table form-table">
             <tr>
                 <td><span class="line-number">{{forloop.counter}}</span></td>
@@ -156,7 +122,7 @@
             </tr>
             <tr>
                 <td style="width: 9rem;">
-                    <span class="tooltip"><img src="{% static 'img/add-button.svg' %}" class="line-img">
+                    <span class="tooltip"><img src="{% static 'img/add-button.svg' %}" class="line-img add-contributor-row">
                     <span class="tooltiptext">Add a contributor</span></span>
 
                     <span class="tooltip"><img src="{% static 'img/up-button.svg' %}" class="line-img">
@@ -165,7 +131,7 @@
                     <span class="tooltip"><img src="{% static 'img/down-button.svg' %}" class="line-img">
                     <span class="tooltiptext">Move this contributor down</span></span>
 
-                    <span class="tooltip"><img src="{% static 'img/delete-button.svg' %}" class="line-img">
+                    <span class="tooltip"><img src="{% static 'img/delete-button.svg' %}" class="line-img remove-contributor-row">
                     <span class="tooltiptext">Delete this contributor</span></span>
                 </td>
                 <th>{{form.affiliation.label}}</th><td colspan="5">{{form.affiliation}}</td>
