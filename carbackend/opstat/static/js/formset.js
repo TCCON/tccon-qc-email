@@ -17,23 +17,12 @@ function cloneMore(selector, prefix) {
 
     // Get each input in the new form. These have attributes like name="contributorsForm-0-contributor_type" and
     // id="id_contributorsForm-0-contributor_type". We need to update the number in those to reflect its new position
-    // in the formset. For the creators form, I could use 'input[type="text"]' as the selector, this won't work for
-    // all forms.
-    newElement.find('input[type="text"]').each(function() {
+    // in the formset. Note that each new input type will need to be added to the selector to be incremented.
+    newElement.find('input[type="text"], select').each(function() {
         console.log($(this).attr('name'));
-        var name = $(this).attr('name').replace('-' + (total-1) + '-', '-' + total + '-');
-        var id = 'id_' + name;
-        $(this).attr({'name': name, 'id': id}).val('').removeAttr('checked');
+        updateElementIndex(this, prefix, total);
     });
 
-    // Then we need to make sure which inputs the labels are for (attached to) is updated as well.
-    newElement.find('label').each(function() {
-        var forValue = $(this).attr('for');
-        if (forValue) {
-          forValue = forValue.replace('-' + (total-1) + '-', '-' + total + '-');
-          $(this).attr({'for': forValue});
-        }
-    });
 
     // Next we update the total number of forms in the formset, by changing the value of the hidden input we found
     // at the beginning
