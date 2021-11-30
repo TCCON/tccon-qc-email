@@ -11,7 +11,7 @@ from datetime import datetime
 import os
 import re
 _this_year = datetime.today().year
-_base_field_width = '15em'
+_base_field_width = '98%'
 
 
 class SiteInfoUpdateForm(ModelForm):
@@ -86,8 +86,6 @@ def _get_flag_values():
 
 
 class CreatorForm(forms.Form):
-
-
     family_name = forms.CharField(
         label='Family name',
         widget=forms.TextInput(attrs={
@@ -109,7 +107,7 @@ class CreatorForm(forms.Form):
         label='Affiliation',
         widget=forms.TextInput(attrs={
             'placeholder': 'Enter affiliation (e.g. institute, city, [state], country) here',
-            'style': f'width:{3 * _base_field_width};'
+            'style': f'width:{_base_field_width};'
         })
     )
 
@@ -245,7 +243,6 @@ class ContributorForm(CreatorForm):
 
     @classmethod
     def cite_schema_to_dict(cls, cite_schema_dict):
-        import pdb; pdb.set_trace()
         form_dict = super().cite_schema_to_dict(cite_schema_dict)
         form_dict['contributor_type'] = cite_schema_dict['contributorType']
         return form_dict
@@ -260,13 +257,9 @@ class ContributorBaseFormset(CreatorBaseFormset):
         contributor_list = cite_schema_dict['contributors']
         return [ContributorForm.cite_schema_to_dict(contributor) for contributor in contributor_list]
 
-    def to_list(self):
-        import pdb; pdb.set_trace()
-        return super().to_list()
 
-
-CreatorFormset = formset_factory(CreatorForm, can_delete=True, formset=CreatorBaseFormset)
-ContributorFormset = formset_factory(ContributorForm, can_delete=True, formset=ContributorBaseFormset)
+CreatorFormset = formset_factory(CreatorForm, formset=CreatorBaseFormset)
+ContributorFormset = formset_factory(ContributorForm, formset=ContributorBaseFormset)
 
 
 class TypeRestrictedFileField(FileField):

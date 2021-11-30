@@ -100,7 +100,7 @@ td {
 }
 
 .form-table {
-    max-width: 80%;
+    width: 100%;
 }
 
 .form-table td {
@@ -119,6 +119,27 @@ td {
 
 .form-table input,textarea {
     width: 500px;
+}
+
+.line-number {
+    font-weight: 900;
+    text-align: center;
+    width: 100%;
+}
+
+#div-form-wrap {
+    max-width: 80%;
+    margin: 0 auto;
+}
+
+.doi-metadata-section {
+    max-width: inherit;
+    background-color: #ddd;
+    padding: 12px;
+    font-weight: 900;
+    font-size: 24px;
+    border: 2px solid #aaa;
+    margin: 6px 0px;
 }
 
 .link-button {
@@ -176,4 +197,19 @@ td {
     text-align: right;
     font-weight: 600;
     padding: 10px 30px 5px 5px;
+}
+
+.line-img {
+    max-height: 2rem;
+    transition-duration: 0.4s;
+    cursor: pointer;
+    background: none;
+}
+
+.line-img:hover {
+    background: #ffecc5;
+}
+
+.form-row {
+    margin: 6px 0;
 }
