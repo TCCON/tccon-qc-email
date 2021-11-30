@@ -11,7 +11,7 @@
         // Creator add/remove/move buttons //
         $(document).on('click', '.add-creator-row', function(e){
             e.preventDefault();
-            cloneMore('.creator:last', 'creatorsForm');
+            cloneMore('.creator', 'creatorsForm');
             return false;
         });
 
@@ -24,7 +24,7 @@
         // Contributor add/remove/move buttons //
         $(document).on('click', '.add-contributor-row', function(e){
             e.preventDefault();
-            cloneMore('.contributor:last', 'contributorsForm');
+            cloneMore('.contributor', 'contributorsForm');
             return false;
         });
 

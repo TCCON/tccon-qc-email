@@ -6,33 +6,37 @@ function updateElementIndex(el, prefix, ndx) {
     if (el.name) el.name = el.name.replace(id_regex, replacement);
 }
 
+function updateAllChildrenIndices(selector, prefix) {
+    var forms = $(selector);
+    $('#id_' + prefix + '-TOTAL_FORMS').val(forms.length);
+    for (var i=0, formCount=forms.length; i<formCount; i++) {
+        console.log(`Updating form ${i}`);
+
+        $(forms.get(i)).find(':input').each(function() {
+            updateElementIndex(this, prefix, i);
+        });
+
+        $(forms.get(i)).find('.line-number').each(function() {
+            $(this).text(i+1);
+        })
+    }
+}
+
 function cloneMore(selector, prefix) {
     // `selector` would be something like ".form-row:last", i.e. the last instance of an element with class "form-row"
     // Create a new element that includes data & events based on that
-    var newElement = $(selector).clone(true);
+    const sel_last = `${selector}:last`
+    var newElement = $(sel_last).clone(false);
 
     // The management form for a Django form set creates a hidden input that has an id attribute like
     // "id_creatorsForm-TOTAL_FORMS". It's value is the total number of forms in the formset.
     var total = $('#id_' + prefix + '-TOTAL_FORMS').val();
 
-    // Get each input in the new form. These have attributes like name="contributorsForm-0-contributor_type" and
-    // id="id_contributorsForm-0-contributor_type". We need to update the number in those to reflect its new position
-    // in the formset. Note that each new input type will need to be added to the selector to be incremented.
-    newElement.find('input[type="text"], select').each(function() {
-        console.log($(this).attr('name'));
-        updateElementIndex(this, prefix, total);
-    });
-
-
-    // Next we update the total number of forms in the formset, by changing the value of the hidden input we found
-    // at the beginning
-    total++;
-    console.log(`Adding row: new total = ${total}`);
-    console.log(`Selecting ${'#id_' + prefix + '-TOTAL_FORMS'}: ${$('#id_' + prefix + '-TOTAL_FORMS')}`);
-    $('#id_' + prefix + '-TOTAL_FORMS').val(total);
-
     // Place the new form after the one we cloned.
-    $(selector).after(newElement);
+    $(sel_last).after(newElement);
+
+    updateAllChildrenIndices(selector, prefix);
+
 
     // This part I think can be removed because I will just leave the buttons alone
 //    var conditionRow = $('.form-row:not(:last)');
@@ -55,15 +59,7 @@ function deleteForm(prefix, selector, btn) {
         console.log(`Closest ${selector} to delete: ${btn.closest(selector)[0]}`);
         btn.closest(selector).remove();
 
-        // Find all the remaining forms and update their index in the name and id attributes, and keep the labels
-        // in sync
-        var forms = $(selector);
-        $('#id_' + prefix + '-TOTAL_FORMS').val(forms.length);
-        for (var i=0, formCount=forms.length; i<formCount; i++) {
-            $(forms.get(i)).find(':input').each(function() {
-                updateElementIndex(this, prefix, i);
-            });
-        }
+        updateAllChildrenIndices(selector, prefix);
     }
     return false;
 }
