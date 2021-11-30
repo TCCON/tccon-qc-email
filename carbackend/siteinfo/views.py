@@ -199,8 +199,12 @@ class EditSiteInfo(View):
             raise Http404('Sorry, you cannot access the information form for site "{}"'.format(site_id))
 
         metadata_file = cls._site_metadata_file(site_id)
-        cite_schema = InfoFileLocks.read_metadata_file(metadata_file)
-        creators_list = formset_cls.cite_schema_to_list(cite_schema)
+        try:
+            cite_schema = InfoFileLocks.read_metadata_file(metadata_file)
+        except FileNotFoundError:
+            creators_list = None
+        else:
+            creators_list = formset_cls.cite_schema_to_list(cite_schema)
 
         if post_data is None:
             return formset_cls(initial=creators_list)
