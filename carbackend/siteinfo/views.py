@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import transaction
 from django.http import Http404
+from django.utils import timezone
 from django.views import View
 from django.shortcuts import render, reverse, HttpResponseRedirect
 
@@ -141,6 +142,7 @@ class EditSiteInfo(View):
             return render(request, 'siteinfo/edit_site_info.html', context=context)
 
     def _save_netcdf_metadata(self, request, form, site_id):
+        # TODO: turn this function back on
         # form.save(user=request.user, site_info=self._get_site_info(site_id))
         site_info = _get_site_info(site_id)
         update = form.save(commit=False)
@@ -158,6 +160,9 @@ class EditSiteInfo(View):
     @classmethod
     def _save_doi_metadata(cls, request, doi_formsets, site_id, site_long_name):
         doi_metadata = {k: v.to_list() for k, v in doi_formsets.items()}
+        # This avoids a Git error from trying to commit with no changes - happens if the user
+        # submits the existing data.
+        doi_metadata['__last_modified__'] = f'{timezone.now().strftime("%Y-%m-%d %H:%M:%S %Z")} by {request.user}'
         metadata_json_file = cls._site_metadata_file(site_id, site_long_name)
         InfoFileLocks.update_metadata_repo(metadata_json_file, doi_metadata, request.user)
 

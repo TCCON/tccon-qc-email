@@ -124,7 +124,7 @@ class InfoFileLocks(models.Model):
     def update_metadata_repo(cls, metadata_file, metadata_dict, username, **kwargs):
         # TODO: handle case where no files have changed, i.e. if the user submits the same info.
         #   Option 1: catch the GitCommandError/check if no files changed and don't commit
-        #   Option 2: always change the file, i.e. have a "last updated" comment in each site.
+        #   Option 2: always change the file, i.e. have a "last updated" comment in each site. <- did this in views
         def callback():
             if has_file_changed():
                 pre_commit_msg = f'Commit state of {metadata_file} before change submitted by {username}'
