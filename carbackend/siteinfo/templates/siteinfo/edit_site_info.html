@@ -115,9 +115,27 @@
         <table class="pretty-table form-table">
             <tr>
                 <td><span class="line-number">{{forloop.counter}}</span></td>
-                <th>{{form.family_name.label}}</th><td>{{form.family_name}}</td>
-                <th>{{form.given_name.label}}</th><td>{{form.given_name}}</td>
-                <th>{{form.orcid.label}}</th><td>{{form.orcid}}</td>
+
+                <th>{{form.family_name.label}}</th>
+                <td>{{form.family_name}}
+                    {% for err in form.family_name.errors %}
+                    <p>{{ err }}</p>
+                    {% endfor %}
+                </td>
+
+                <th>{{form.given_name.label}}</th>
+                <td>{{form.given_name}}
+                    {% for err in form.given_name.errors %}
+                    <p>{{ err }}</p>
+                    {% endfor %}
+                </td>
+
+                <th>{{form.orcid.label}}</th>
+                <td>{{form.orcid}}
+                    {% for err in form.orcid.errors %}
+                    <p>{{ err }}</p>
+                    {% endfor %}
+                </td>
             </tr>
             <tr>
                 <td style="width: 9rem;">
@@ -133,8 +151,20 @@
                     <span class="tooltip"><img src="{% static 'img/delete-button.svg' %}" class="line-img remove-creator-row">
                     <span class="tooltiptext">Delete this creator</span></span>
                 </td>
-                <th>{{form.affiliation.label}}</th><td colspan="3">{{form.affiliation}}</td>
-                <th>{{form.researcher_id.label}}</th><td>{{form.researcher_id}}</td>
+
+                <th>{{form.affiliation.label}}</th>
+                <td colspan="3">{{form.affiliation}}
+                    {% for err in form.affiliation.errors %}
+                    <p>{{ err }}</p>
+                    {% endfor %}
+                </td>
+
+                <th>{{form.researcher_id.label}}</th>
+                <td>{{form.researcher_id}}
+                    {% for err in form.researcher_id.errors %}
+                    <p>{{ err }}</p>
+                    {% endfor %}
+                </td>
             </tr>
         </table>
         </div>
@@ -149,11 +179,35 @@
         <table class="pretty-table form-table">
             <tr>
                 <td><span class="line-number">{{forloop.counter}}</span></td>
-                <th>{{form.contributor_type.label}}</th><td>{{form.contributor_type}}</td>
-                <th>{{form.family_name.label}}</th><td>{{form.family_name}}</td>
-                <th>{{form.given_name.label}}</th><td>{{form.given_name}}</td>
-                <th>{{form.orcid.label}}</th><td>{{form.orcid}}</td>
+                <th>{{form.contributor_type.label}}</th>
+                <td>{{form.contributor_type}}
+                    {% for err in form.contributor_type.errors %}
+                    <p>{{ err }}</p>
+                    {% endfor %}
+                </td>
+
+                <th>{{form.family_name.label}}</th>
+                <td>{{form.family_name}}
+                    {% for err in form.family_name.errors %}
+                    <p>{{ err }}</p>
+                    {% endfor %}
+                </td>
+
+                <th>{{form.given_name.label}}</th>
+                <td>{{form.given_name}}
+                    {% for err in form.given_name.errors %}
+                    <p>{{ err }}</p>
+                    {% endfor %}
+                </td>
+
+                <th>{{form.orcid.label}}</th>
+                <td>{{form.orcid}}
+                    {% for err in form.orcid.errors %}
+                    <p>{{ err }}</p>
+                    {% endfor %}
+                </td>
             </tr>
+
             <tr>
                 <td style="width: 9rem;">
                     <span class="tooltip"><img src="{% static 'img/add-button.svg' %}" class="line-img add-contributor-row">
@@ -168,8 +222,20 @@
                     <span class="tooltip"><img src="{% static 'img/delete-button.svg' %}" class="line-img remove-contributor-row">
                     <span class="tooltiptext">Delete this contributor</span></span>
                 </td>
-                <th>{{form.affiliation.label}}</th><td colspan="5">{{form.affiliation}}</td>
-                <th>{{form.researcher_id.label}}</th><td>{{form.researcher_id}}</td>
+
+                <th>{{form.affiliation.label}}</th>
+                <td colspan="5">{{form.affiliation}}
+                    {% for err in form.affiliation.errors %}
+                    <p>{{ err }}</p>
+                    {% endfor %}
+                </td>
+
+                <th>{{form.researcher_id.label}}</th>
+                <td>{{form.researcher_id}}
+                    {% for err in form.researcher_id.errors %}
+                    <p>{{ err }}</p>
+                    {% endfor %}
+                </td>
             </tr>
         </table>
         </div>

@@ -198,6 +198,26 @@ class CreatorBaseFormset(forms.BaseFormSet):
 
 class ContributorForm(CreatorForm):
     # A contributor has most of the same fields as a creator, with one extra: a type
+    # Also given name and affiliation are not required
+    given_name = forms.CharField(
+        label='Given name(s)',
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Enter given name(s) or initials here.',
+            'style': f'width:{_base_field_width};'
+        })
+    )
+
+    affiliation = forms.CharField(
+        label='Affiliation',
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Enter affiliation (e.g. institute, city, [state], country) here',
+            'style': f'width:{_base_field_width};'
+        })
+    )
+
+    TYPE_NONE = '-'
     TYPE_CONTACT_PERSON = 'ContactPerson'
     TYPE_DATA_COL = 'DataCollector'
     TYPE_DATA_CUR = 'DataCurator'
@@ -216,7 +236,16 @@ class ContributorForm(CreatorForm):
     TYPE_RES_GRP = 'ResearchGroup'
     TYPE_RIGHTS_HOLD = 'RightsHolder'
 
-    contributor_type = forms.ChoiceField(choices=[
+    # Need to set the initial value here so that the formset correctly identifies
+    # if this has not changed. For the curious, the `full_clean` method of a Django
+    # form will skip validation *if* the form is allowed to be empty *and* it has not
+    # changed (django/forms/forms.py). `has_changed()` in turn calls `changed_data()`,
+    # which compares the initial value to the current value. If `initial` is not provided,
+    # the default is `None`. For text fields, that works - they will return `None` if
+    # nothing was entered. For multiple choice fields, those *always* have something,
+    # so we need to set the initial value to some other placeholder.
+    contributor_type = forms.ChoiceField(initial='-', choices=[
+        (TYPE_NONE, '-'),
         (TYPE_CONTACT_PERSON, 'Contact person'),
         (TYPE_DATA_COL, 'Data collector'),
         (TYPE_DATA_CUR, 'Data curator'),
@@ -235,6 +264,12 @@ class ContributorForm(CreatorForm):
         (TYPE_RES_GRP, 'Research group'),
         (TYPE_RIGHTS_HOLD, 'Rights holder')
     ])
+
+    def clean_contributor_type(self):
+        data = self.cleaned_data['contributor_type']
+        if data == self.TYPE_NONE:
+            raise forms.ValidationError('You must choose a contributor type', code='no_contrib_type')
+        return data
 
     def to_dict(self):
         json_dict = super().to_dict()
