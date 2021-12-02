@@ -126,7 +126,7 @@ class EditSiteInfo(View):
         return render(request, 'siteinfo/edit_site_info.html', context=context)
 
     def post(self, request, site_id):
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         netcdf_form = self._get_form(request.user, site_id, post_data=request.POST)
 
         doi_formsets = self._make_doi_formset_dict(request, site_id, with_post=True)
@@ -200,8 +200,8 @@ class EditSiteInfo(View):
             post_data = None
 
         doi_formsets = {
-            'creators': cls._get_doi_formset(request.user, site_id, forms.CreatorFormset, post_data=post_data),
-            'contributors': cls._get_doi_formset(request.user, site_id, forms.ContributorFormset, post_data=post_data),
+            forms.CreatorFormset.cls_key: cls._get_doi_formset(request.user, site_id, forms.CreatorFormset, post_data=post_data),
+            forms.ContributorFormset.cls_key: cls._get_doi_formset(request.user, site_id, forms.ContributorFormset, post_data=post_data),
             forms.RelatedIdFormset.cls_key: cls._get_doi_formset(request.user, site_id, forms.RelatedIdFormset, post_data=post_data)
         }
 

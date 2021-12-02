@@ -85,7 +85,47 @@ def _get_flag_values():
         return json.load(f)['definitions']
 
 
-class CreatorForm(forms.Form):
+class MetadataAbstractForm(forms.Form):
+    # Override this with field names as keys and values = lists
+    # of values considered to be null/empty inputs. Used to determine
+    # if the whole form is an empty one.
+    _null_values = dict()
+
+    def to_dict(self) -> dict:
+        """Convert this form into a JSON dictionary, correctly formatted for the DOI metadata."""
+        raise NotImplementedError('Must implement the to_dict method on a MetadataAbstractForm subclass')
+
+    @classmethod
+    def cite_schema_to_dict(cls, cite_schema_dict: dict) -> dict:
+        """Convert the DOI metadata JSON dict into one that can be given as this form's initial value"""
+        raise NotImplementedError('Must implement the to_dict method on a cite_schema_to_dict subclass')
+
+    def is_valid(self):
+        # This needed overridden to handle an edge case with the javascript: if you have a non-empty form, then
+        # delete it, and an empty form takes its place, because the empty form is now in the position where the
+        # non-empty one was, Django assumes that it should have the initial values of the non-empty form, and so
+        # incorrectly sees it as having changed.
+        #
+        # Here, we ignore the bound initial values and just check if all of the forms inputs are their default values.
+        # If so, it is an empty form, so we set the cleaned data to be empty and skip validation. Otherwise, we let
+        # Django do its normal validation process.
+        if self.is_empty():
+            self.cleaned_data = dict()
+            return True
+        else:
+            return super().is_valid()
+
+    def is_empty(self):
+        for name, field in self.fields.items():
+            prefixed_name = self.add_prefix(name)
+            data_value = field.widget.value_from_datadict(self.data, self.files, prefixed_name)
+            if data_value not in self._null_values.get(name, (None, '', '-')):
+                return False
+
+        return True
+
+
+class CreatorForm(MetadataAbstractForm):
     family_name = forms.CharField(
         label='Family name',
         widget=forms.TextInput(attrs={
@@ -175,27 +215,6 @@ class CreatorForm(forms.Form):
         return form_dict
 
 
-class CreatorBaseFormset(forms.BaseFormSet):
-    def __init__(self, *args, prefix='creatorsForm', **kwargs):
-        super().__init__(*args, prefix=prefix, **kwargs)
-
-    @classmethod
-    def cite_schema_to_list(cls, cite_schema_dict):
-        creator_list = cite_schema_dict['creators']
-        return [CreatorForm.cite_schema_to_dict(creator) for creator in creator_list]
-
-    def to_list(self):
-        people = []
-        for form in self:
-            # We need to skip empty forms - the formset validation will not check forms that weren't updated,
-            # but it won't remove them either. We also skip forms that should be deleted - I `get` DELETE because
-            # I might decide in the future to just remove rows to be deleted in Javascript, so they wouldn't show
-            # up, in which case I'd remove the DELETE field.
-            if len(form.cleaned_data) > 0 and not form.cleaned_data.get('DELETE', False):
-                people.append(form.to_dict())
-        return people
-
-
 class ContributorForm(CreatorForm):
     # A contributor has most of the same fields as a creator, with one extra: a type
     # Also given name and affiliation are not required
@@ -283,17 +302,7 @@ class ContributorForm(CreatorForm):
         return form_dict
 
 
-class ContributorBaseFormset(CreatorBaseFormset):
-    def __init__(self, *args, prefix='contributorsForm', **kwargs):
-        super().__init__(*args, prefix=prefix, **kwargs)
-
-    @classmethod
-    def cite_schema_to_list(cls, cite_schema_dict):
-        contributor_list = cite_schema_dict['contributors']
-        return [ContributorForm.cite_schema_to_dict(contributor) for contributor in contributor_list]
-
-
-class RelatedIdentifierForm(forms.Form):
+class RelatedIdentifierForm(MetadataAbstractForm):
     REL_NONE = '-'
     REL_CITED_BY = 'IsCitedBy'
     REL_CITES = 'Cites'
@@ -388,12 +397,6 @@ class RelatedIdentifierForm(forms.Form):
         })
     )
 
-    _null_values = {
-        'relation_type': ['-'],
-        'related_identifier_type': ['-'],
-        'related_identifier': [None, '']
-    }
-
     def clean_relation_type(self):
         data = self.cleaned_data['relation_type']
         if data == self.REL_NONE:
@@ -405,23 +408,6 @@ class RelatedIdentifierForm(forms.Form):
         if data == self.TYPE_NONE:
             raise forms.ValidationError('You must choose a related identifier type', code='no_relation_type')
         return data
-
-    def is_valid(self):
-        import pdb; pdb.set_trace()
-        if self.is_empty():
-            self.cleaned_data = dict()
-            return True
-        else:
-            return super().is_valid()
-
-    def is_empty(self):
-        for name, field in self.fields.items():
-            prefixed_name = self.add_prefix(name)
-            data_value = field.widget.value_from_datadict(self.data, self.files, prefixed_name)
-            if data_value not in self._null_values.get(name):
-                return False
-
-        return True
 
     def to_dict(self):
         data = self.cleaned_data
@@ -469,6 +455,18 @@ class MetadataBaseFormset(forms.BaseFormSet):
             if len(form.cleaned_data) > 0:
                 elements.append(form.to_dict())
         return elements
+
+
+class CreatorBaseFormset(MetadataBaseFormset):
+    cls_prefix = 'creatorsForm'
+    cls_key = 'creators'
+    cls_form = CreatorForm
+
+
+class ContributorBaseFormset(MetadataBaseFormset):
+    cls_prefix = 'contributorsForm'
+    cls_key = 'contributors'
+    cls_form = ContributorForm
 
 
 class RelatedIdentifierBaseFormset(MetadataBaseFormset):
