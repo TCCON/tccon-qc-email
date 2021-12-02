@@ -135,8 +135,20 @@
 </head>
 <body>
     <h1>Edit public metadata for {{ long_name }} ({{ site_id }})</h1>
-
     <div id="div-form-wrap">
+
+    {% if forms_invalid.any %}
+    <div class="form-error-box">
+        {% if forms_invalid.common %}
+        <p style="vertical-align: middle;"><img src="{% static 'img/error-icon.svg' %}" style="width: 2rem; vertical-align: middle;"/>There are errors in the common metadata form</p>
+        {% endif %}
+        {% if forms_invalid.doi %}
+        <p style="vertical-align: middle;"><img src="{% static 'img/error-icon.svg' %}" style="width: 2rem; vertical-align: middle;"/>There are errors in the DOI metadata form</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+
     <h2>Common metadata</h2>
     <p>The metadata in this first section will go into the public netCDF files and the DOI information.</p>
 
@@ -161,7 +173,7 @@
                 {% else %}These fields may be edited; note that they will not propagate to the public files
                 until those files are next regenerated.{% endif %}</td> </tr>
 
-            {{ form.as_table }}
+            {{ netcdf_form.as_table }}
 
         </table>
 
@@ -169,6 +181,39 @@
 
         <h2>DOI metadata</h2>
         <p>The metadata below is only contained in the DOI record for your site.</p>
+
+        <div class="doi-metadata-section">Site description
+            <table class="pretty-table form-table">
+                <tr>
+                    <th>{{ site_doi_form.site.label }}</th>
+                    <td>{{ site_doi_form.site }}
+                        {% for err in site_doi_form.site.errors %}
+                        <p class="form-error-box">{{ err }}</p>
+                        {% endfor %}
+                    </td>
+                    <th>{{ site_doi_form.location_latitude.label }}</th>
+                    <td>{{ site_doi_form.location_latitude }}
+                        {% for err in site_doi_form.location_latitude.errors %}
+                        <p class="form-error-box">{{ err }}</p>
+                        {% endfor %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>{{ site_doi_form.location_place.label }}</th>
+                    <td>{{ site_doi_form.location_place }}
+                        {% for err in site_doi_form.location_place.errors %}
+                        <p class="form-error-box">{{ err }}</p>
+                        {% endfor %}
+                    </td>
+                    <th>{{ site_doi_form.location_longitude.label }}</th>
+                    <td>{{ site_doi_form.location_longitude }}
+                        {% for err in site_doi_form.location_longitude.errors %}
+                        <p class="form-error-box">{{ err }}</p>
+                        {% endfor %}
+                    </td>
+                </tr>
+            </table>
+        </div>
 
         {{ creators_formset.management_form }}
         <div class="doi-metadata-section">Creators
@@ -181,21 +226,21 @@
                 <th>{{form.family_name.label}}</th>
                 <td>{{form.family_name}}
                     {% for err in form.family_name.errors %}
-                    <p>{{ err }}</p>
+                    <p class="form-error-box">{{ err }}</p>
                     {% endfor %}
                 </td>
 
                 <th>{{form.given_name.label}}</th>
                 <td>{{form.given_name}}
                     {% for err in form.given_name.errors %}
-                    <p>{{ err }}</p>
+                    <p class="form-error-box">{{ err }}</p>
                     {% endfor %}
                 </td>
 
                 <th>{{form.orcid.label}}</th>
                 <td>{{form.orcid}}
                     {% for err in form.orcid.errors %}
-                    <p>{{ err }}</p>
+                    <p class="form-error-box">{{ err }}</p>
                     {% endfor %}
                 </td>
             </tr>
@@ -217,14 +262,14 @@
                 <th>{{form.affiliation.label}}</th>
                 <td colspan="3">{{form.affiliation}}
                     {% for err in form.affiliation.errors %}
-                    <p>{{ err }}</p>
+                    <p class="form-error-box">{{ err }}</p>
                     {% endfor %}
                 </td>
 
                 <th>{{form.researcher_id.label}}</th>
                 <td>{{form.researcher_id}}
                     {% for err in form.researcher_id.errors %}
-                    <p>{{ err }}</p>
+                    <p class="form-error-box">{{ err }}</p>
                     {% endfor %}
                 </td>
             </tr>
@@ -244,28 +289,28 @@
                 <th>{{form.contributor_type.label}}</th>
                 <td>{{form.contributor_type}}
                     {% for err in form.contributor_type.errors %}
-                    <p>{{ err }}</p>
+                    <p class="form-error-box">{{ err }}</p>
                     {% endfor %}
                 </td>
 
                 <th>{{form.family_name.label}}</th>
                 <td>{{form.family_name}}
                     {% for err in form.family_name.errors %}
-                    <p>{{ err }}</p>
+                    <p class="form-error-box">{{ err }}</p>
                     {% endfor %}
                 </td>
 
                 <th>{{form.given_name.label}}</th>
                 <td>{{form.given_name}}
                     {% for err in form.given_name.errors %}
-                    <p>{{ err }}</p>
+                    <p class="form-error-box">{{ err }}</p>
                     {% endfor %}
                 </td>
 
                 <th>{{form.orcid.label}}</th>
                 <td>{{form.orcid}}
                     {% for err in form.orcid.errors %}
-                    <p>{{ err }}</p>
+                    <p class="form-error-box">{{ err }}</p>
                     {% endfor %}
                 </td>
             </tr>
@@ -288,14 +333,14 @@
                 <th>{{form.affiliation.label}}</th>
                 <td colspan="5">{{form.affiliation}}
                     {% for err in form.affiliation.errors %}
-                    <p>{{ err }}</p>
+                    <p class="form-error-box">{{ err }}</p>
                     {% endfor %}
                 </td>
 
                 <th>{{form.researcher_id.label}}</th>
                 <td>{{form.researcher_id}}
                     {% for err in form.researcher_id.errors %}
-                    <p>{{ err }}</p>
+                    <p class="form-error-box">{{ err }}</p>
                     {% endfor %}
                 </td>
             </tr>
@@ -314,14 +359,14 @@
                     <th>{{form.relation_type.label}}</th>
                     <td>{{form.relation_type}}
                         {% for err in form.relation_type.errors %}
-                        <p>{{ err }}</p>
+                        <p class="form-error-box">{{ err }}</p>
                         {% endfor %}
                     </td>
 
                     <th>{{form.related_identifier_type.label}}</th>
                     <td>{{form.related_identifier_type}}
                         {% for err in form.related_identifier_type.errors %}
-                        <p>{{ err }}</p>
+                        <p class="form-error-box">{{ err }}</p>
                         {% endfor %}
                     </td>
                 </tr>
@@ -343,7 +388,7 @@
                     <th>{{form.related_identifier.label}}</th>
                     <td colspan="3">{{form.related_identifier}}
                         {% for err in form.related_identifier.errors %}
-                        <p>{{ err }}</p>
+                        <p class="form-error-box">{{ err }}</p>
                         {% endfor %}
                     </td>
                 </tr>
@@ -359,25 +404,25 @@
             <table class="pretty-table form-table">
                 <tr>
                     <td><span class="line-number">{{forloop.counter}}</span></td>
-                    
+
                     <th>{{form.funder_name.label}}</th>
                     <td>{{form.funder_name}}
                         {% for err in form.funder_name.errors %}
-                        <p>{{ err }}</p>
+                        <p class="form-error-box">{{ err }}</p>
                         {% endfor %}
                     </td>
 
                     <th>{{form.funder_identifier_type.label}}</th>
                     <td>{{form.funder_identifier_type}}
                     {% for err in form.funder_identifier_type.errors %}
-                    <p>{{ err }}</p>
+                    <p class="form-error-box">{{ err }}</p>
                     {% endfor %}
                     </td>
 
                     <th>{{form.funder_identifier.label}}</th>
                     <td>{{form.funder_identifier}}
                     {% for err in form.funder_identifier.errors %}
-                    <p>{{ err }}</p>
+                    <p class="form-error-box">{{ err }}</p>
                     {% endfor %}
                     </td>
                 </tr>
@@ -400,21 +445,21 @@
                     <th>{{form.award_number.label}}</th>
                     <td>{{form.award_number}}
                         {% for err in form.award_number.errors %}
-                        <p>{{ err }}</p>
+                        <p class="form-error-box">{{ err }}</p>
                         {% endfor %}
                     </td>
 
                     <th>{{form.award_uri.label}}</th>
                     <td>{{form.award_uri}}
                         {% for err in form.award_uri.errors %}
-                        <p>{{ err }}</p>
+                        <p class="form-error-box">{{ err }}</p>
                         {% endfor %}
                     </td>
 
                     <th>{{form.award_title.label}}</th>
                     <td>{{form.award_title}}
                         {% for err in form.award_title.errors %}
-                        <p>{{ err }}</p>
+                        <p class="form-error-box">{{ err }}</p>
                         {% endfor %}
                     </td>
                 </tr>

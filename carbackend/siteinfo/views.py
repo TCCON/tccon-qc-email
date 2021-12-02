@@ -97,6 +97,8 @@ class ViewSiteInfo(View):
             'can_edit': _can_edit_site(request.user, site_id),
             'msg': msg
         }
+
+        # TODO: show DOI metadata here
         return render(request, 'siteinfo/view_site_info.html', context=context)
 
 
@@ -115,30 +117,31 @@ class EditSiteInfo(View):
             return _redirect_for_lack_of_permission(request, site_id, 'public metadata')
 
         site_info = _get_site_info(site_id)
-        form = self._get_form(user, site_id)
-
+        netcdf_form = self._get_netcdf_form(user, site_id)
+        site_doi_form = self._get_site_doi_form(user, site_id)
         # These will be put into context as {key}_formset
         doi_formsets = self._make_doi_formset_dict(request, site_id)
 
         # import pdb; pdb.set_trace()
 
-        context = self._make_context(user, form, doi_formsets, site_id, site_info)
+        context = self._make_context(user, netcdf_form, site_doi_form, doi_formsets, site_id, site_info)
         return render(request, 'siteinfo/edit_site_info.html', context=context)
 
     def post(self, request, site_id):
-        # import pdb; pdb.set_trace()
-        netcdf_form = self._get_form(request.user, site_id, post_data=request.POST)
-
+        # TODO: confirm before deleting a filled form (JS)?
+        # TODO: add in help hover marks?
+        netcdf_form = self._get_netcdf_form(request.user, site_id, post_data=request.POST)
+        site_doi_form = self._get_site_doi_form(request.user, site_id, post_data=request.POST)
         doi_formsets = self._make_doi_formset_dict(request, site_id, with_post=True)
 
         # Only submit changes if all of the various forms are valid
-        if netcdf_form.is_valid() and all(fs.is_valid() for fs in doi_formsets.values()):
+        if netcdf_form.is_valid() and site_doi_form.is_valid() and all(fs.is_valid() for fs in doi_formsets.values()):
             updated_site_info = self._save_netcdf_metadata(request, netcdf_form, site_id)
-            self._save_doi_metadata(request, doi_formsets, site_id, updated_site_info.long_name)
+            self._save_doi_metadata(request, updated_site_info, site_doi_form, doi_formsets, site_id)
             url = '{}/?msg=success'.format(reverse('siteinfo:view', args=(site_id,)).rstrip('?').rstrip('/'))
             return HttpResponseRedirect(url)
         else:
-            context = self._make_context(request.user, netcdf_form, doi_formsets, site_id)
+            context = self._make_context(request.user, netcdf_form, site_doi_form, doi_formsets, site_id)
             return render(request, 'siteinfo/edit_site_info.html', context=context)
 
     def _save_netcdf_metadata(self, request, form, site_id):
@@ -158,12 +161,26 @@ class EditSiteInfo(View):
         return update
 
     @classmethod
-    def _save_doi_metadata(cls, request, doi_formsets, site_id, site_long_name):
+    def _save_doi_metadata(cls, request, site_nc_info, site_doi_form, doi_formsets, site_id):
+        # TODO: add in derived or static metadata
         doi_metadata = {k: v.to_list() for k, v in doi_formsets.items()}
+        doi_metadata['titles'] = [{'title': f'TCCON data from {site_doi_form.data["site"]}, '
+                                            f'Release GGG2020.{site_nc_info.data_revision}'}]
+
+        geo_data = {
+            'pointLongitude': site_doi_form.data['location_longitude'],
+            'pointLatitude': site_doi_form.data['location_latitude']
+        }
+
+        if site_doi_form.data.get('location_place') is not None:
+            geo_data['geoLocationPlace'] = site_doi_form.data['location_place']
+
+        doi_metadata['GeoLocation'] = [geo_data]
+
         # This avoids a Git error from trying to commit with no changes - happens if the user
         # submits the existing data.
         doi_metadata['__last_modified__'] = f'{timezone.now().strftime("%Y-%m-%d %H:%M:%S %Z")} by {request.user}'
-        metadata_json_file = cls._site_metadata_file(site_id, site_long_name)
+        metadata_json_file = cls._site_metadata_file(site_id, site_nc_info.long_name)
         InfoFileLocks.update_metadata_repo(metadata_json_file, doi_metadata, request.user)
 
     @staticmethod
@@ -175,7 +192,7 @@ class EditSiteInfo(View):
         return f'{site_id}_{site_long_name}.json'
 
     @staticmethod
-    def _get_form(user, site_id, post_data=None):
+    def _get_netcdf_form(user, site_id, post_data=None):
         if post_data is None:
             site_info = _get_site_info(site_id)
             if _can_edit_all_site_info(user, site_id):
@@ -191,6 +208,14 @@ class EditSiteInfo(View):
                 return SiteInfoUpdateForm(post_data)
             else:
                 raise Http404('Sorry, you cannot access the information form for site "{}"'.format(site_id))
+
+    @staticmethod
+    def _get_site_doi_form(user, site_id, post_data=None):
+        # TODO: populate from JSON if post data is none
+        if _can_edit_site(user, site_id):
+            return forms.SiteDoiForm(post_data)
+        else:
+            raise Http404('Sorry you cannot access the information form for site "{}"'.format(site_id))
 
     @classmethod
     def _make_doi_formset_dict(cls, request, site_id, with_post=False):
@@ -236,22 +261,28 @@ class EditSiteInfo(View):
         utils.backup_file_rolling(settings.SITE_INFO_FILE)
         InfoFileLocks.write_json_file(settings.SITE_INFO_FILE, all_site_info, indent=4)
 
-    def _make_context(self, user, form, doi_formsets, site_id, site_info=None):
+    def _make_context(self, user, netcdf_form, site_doi_form, doi_formsets, site_id, site_info=None):
         if site_info is None:
             site_info = _get_site_info(site_id)
 
-        fixed_fields = form.fixed_fields()
+        fixed_fields = netcdf_form.fixed_fields()
         fixed_values = {f: {'value': site_info[f], 'name': self._pretty_name(f)} for f in fixed_fields}
         std_fixed_fields = SiteInfoUpdateForm.fixed_fields()
+        
+        nc_invalid = not netcdf_form.is_valid()
+        sd_invalid = not site_doi_form.is_valid()
+        fs_invalid = not all(fs.is_valid() for fs in doi_formsets.values())
 
         context = {
-            'form': form,
+            'netcdf_form': netcdf_form,
+            'site_doi_form': site_doi_form,
             'fixed_values': fixed_values,
             'std_fixed_fields': {'n': len(std_fixed_fields), 'fields': _grammatical_join(std_fixed_fields)},
             'long_name': site_info.get('long_name', '??'),
             'site_id': site_id,
             'contact': utils.get_contact(),
-            'can_edit_all': _can_edit_all_site_info(user, site_id)
+            'can_edit_all': _can_edit_all_site_info(user, site_id),
+            'forms_invalid': {'any': nc_invalid or sd_invalid or fs_invalid, 'common': nc_invalid, 'doi': sd_invalid or fs_invalid}
         }
 
         # Add all the extra DOI formsets directly into the context dictionary

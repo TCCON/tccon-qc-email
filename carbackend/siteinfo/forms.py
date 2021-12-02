@@ -125,6 +125,62 @@ class MetadataAbstractForm(forms.Form):
         return True
 
 
+class SiteDoiForm(forms.Form):
+    site = forms.CharField(
+        label='Full site name & country code',
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Ex: Ascension Island (SH)',
+            'style': f'width:{_base_field_width};'
+        })
+    )
+
+    location_place = forms.CharField(
+        label='Name of site location (optional)',
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Ex: Arlane Tracking Station (AC)',
+            'style': f'width:{_base_field_width};'
+        })
+    )
+
+    location_latitude = forms.CharField(
+        label='Site latitude (optional)',
+        help_text='Latitude in degrees, south is negative.',
+        widget=forms.TextInput(attrs={
+            'placeholder': 'South is negative',
+            'style': f'width:{_base_field_width};'
+        })
+    )
+
+    location_longitude = forms.CharField(
+        label='Site longitude (optional)',
+        help_text='Longitude in degrees, west is negative.',
+        widget=forms.TextInput(attrs={
+            'placeholder': 'West is negative',
+            'style': f'width:{_base_field_width};'
+        })
+    )
+
+    def clean_location_latitude(self):
+        return self._clean_latlon('location_latitude', 'Site latitude', -90.0, 90.0)
+
+    def clean_location_longitude(self):
+        return self._clean_latlon('location_longitude', 'Site longitude', -180.0, 180.0)
+
+    def _clean_latlon(self, key, descr, minval, maxval):
+        data = self.cleaned_data[key]
+        try:
+            v = float(data)
+        except ValueError:
+            raise forms.ValidationError(f'{descr} must be a valid numeric value', 'bad_number')
+
+        if v < minval or v > maxval:
+            raise forms.ValidationError(f'{descr} must be between {minval:.1f} and {maxval:.1f}')
+
+        # Keep it as a string, that's how it is stored in the JSON
+        return data
+
+
 class CreatorForm(MetadataAbstractForm):
     family_name = forms.CharField(
         label='Family name',
