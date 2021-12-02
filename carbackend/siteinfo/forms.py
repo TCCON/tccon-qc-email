@@ -293,8 +293,193 @@ class ContributorBaseFormset(CreatorBaseFormset):
         return [ContributorForm.cite_schema_to_dict(contributor) for contributor in contributor_list]
 
 
+class RelatedIdentifierForm(forms.Form):
+    REL_NONE = '-'
+    REL_CITED_BY = 'IsCitedBy'
+    REL_CITES = 'Cites'
+    REL_SUPP_TO = 'IsSupplementTo'
+    REL_SUPP_BY = 'IsSupplementedBy'
+    REL_CONT_BY = 'IsContinuedBy'
+    REL_CONTS = 'Continues'
+    REL_HAS_META = 'HasMetadata'
+    REL_IS_META_FOR = 'IsMetadataFor'
+    REL_NEW_VER = 'IsNewVersionOf'
+    REL_PREV_VER = 'IsPreviousVersionOf'
+    REL_PART_OF = 'IsPartOf'
+    REL_HAS_PART = 'HasPart'
+    REL_REF_BY = 'IsReferencedBy'
+    REL_REFS = 'References'
+    REL_DOC_BY = 'IsDocumentedBy'
+    REL_DOCS = 'Documents'
+    REL_COMP_BY = 'IsCompiledBy'
+    REL_VAR_OF = 'IsVariantFormOf'
+    REL_ORIG_OF = 'IsOriginalFormOf'
+
+    relation_type = forms.ChoiceField(initial='-', choices=[
+        (REL_NONE, '-'),
+        (REL_CITED_BY, 'Is cited by'),
+        (REL_CITES, 'Cites'),
+        (REL_SUPP_TO, 'Is supplement to'),
+        (REL_SUPP_BY, 'Is supplemented by'),
+        (REL_CONT_BY, 'Is continued by'),
+        (REL_CONTS, 'Continues'),
+        (REL_HAS_META, 'Has metadata'),
+        (REL_IS_META_FOR, 'Is metadata for'),
+        (REL_NEW_VER, 'Is new version of'),
+        (REL_PREV_VER, 'Is previous version of'),
+        (REL_PART_OF, 'Is part of'),
+        (REL_HAS_PART, 'Has part'),
+        (REL_REF_BY, 'Is referenced by'),
+        (REL_REFS, 'References'),
+        (REL_DOC_BY, 'Is documented by'),
+        (REL_DOCS, 'Documents'),
+        (REL_COMP_BY, 'Is compiled by'),
+        (REL_VAR_OF, 'Is variant form of'),
+        (REL_ORIG_OF, 'Is original form of')
+    ])
+
+    TYPE_NONE = '-'
+    TYPE_ARK = 'ARK'
+    TYPE_ARXIV = 'arXiv'
+    TYPE_BIBCODE = 'bibcode'
+    TYPE_DOI = 'DOI'
+    TYPE_EAN13 = 'EAN13'
+    TYPE_EISSN = 'EISSN'
+    TYPE_HANDLE = 'Handle'
+    TYPE_IGSN = 'IGSN'
+    TYPE_ISBN = 'ISBN'
+    TYPE_ISSN = 'ISSN'
+    TYPE_ISTC = 'ISTC'
+    TYPE_LISSN = 'LISSN'
+    TYPE_LISD = 'LISD'
+    TYPE_PMID = 'PMID'
+    TYPE_PURL = 'PURL'
+    TYPE_UPC = 'UPC'
+    TYPE_URL = 'URL'
+    TYPE_URN = 'URN'
+
+    related_identifier_type = forms.ChoiceField(initial='-', choices=[
+        (TYPE_NONE, '-'),
+        (TYPE_ARK, 'ARK'),
+        (TYPE_ARXIV, 'arXiv'),
+        (TYPE_BIBCODE, 'bibcode'),
+        (TYPE_DOI, 'DOI'),
+        (TYPE_EAN13, 'EAN13'),
+        (TYPE_EISSN, 'EISSN'),
+        (TYPE_HANDLE, 'Handle'),
+        (TYPE_IGSN, 'IGSN'),
+        (TYPE_ISBN, 'ISBN'),
+        (TYPE_ISSN, 'ISSN'),
+        (TYPE_ISTC, 'ISTC'),
+        (TYPE_LISSN, 'LISSN'),
+        (TYPE_LISD, 'LISD'),
+        (TYPE_PMID, 'PMID'),
+        (TYPE_PURL, 'PURL'),
+        (TYPE_UPC, 'UPC'),
+        (TYPE_URL, 'URL'),
+        (TYPE_URN, 'URN')
+    ])
+
+    related_identifier = forms.CharField(
+        label='Related identifier',
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Enter the identifier here',
+            'style': f'width:{_base_field_width};'
+        })
+    )
+
+    _null_values = {
+        'relation_type': ['-'],
+        'related_identifier_type': ['-'],
+        'related_identifier': [None, '']
+    }
+
+    def clean_relation_type(self):
+        data = self.cleaned_data['relation_type']
+        if data == self.REL_NONE:
+            raise forms.ValidationError('You must choose a relation type', code='no_relation_type')
+        return data
+
+    def clean_id_type(self):
+        data = self.cleaned_data['related_identifier_type']
+        if data == self.TYPE_NONE:
+            raise forms.ValidationError('You must choose a related identifier type', code='no_relation_type')
+        return data
+
+    def is_valid(self):
+        import pdb; pdb.set_trace()
+        if self.is_empty():
+            self.cleaned_data = dict()
+            return True
+        else:
+            return super().is_valid()
+
+    def is_empty(self):
+        for name, field in self.fields.items():
+            prefixed_name = self.add_prefix(name)
+            data_value = field.widget.value_from_datadict(self.data, self.files, prefixed_name)
+            if data_value not in self._null_values.get(name):
+                return False
+
+        return True
+
+    def to_dict(self):
+        data = self.cleaned_data
+        json_dict = {
+            'relatedIdentifier': data['related_identifier'],
+            'relationType': data['relation_type'],
+            'relatedIdentifierType': data['related_identifier_type'],
+        }
+        return json_dict
+
+    @classmethod
+    def cite_schema_to_dict(cls, cite_schema_dict):
+        form_dict = {
+            'related_identifier': cite_schema_dict['relatedIdentifier'],
+            'relation_type': cite_schema_dict['relationType'],
+            'related_identifier_type': cite_schema_dict['relatedIdentifierType']
+        }
+
+        return form_dict
+
+
+class MetadataBaseFormset(forms.BaseFormSet):
+    cls_prefix = None
+    cls_key = None
+    cls_form = None
+
+    def __init__(self, *args, prefix=None, **kwargs):
+        if any(x is None for x in [self.cls_prefix, self.cls_key, self.cls_form]):
+            raise TypeError(f'{self.__class__.__name__} is missing class information')
+
+        if prefix is None:
+            prefix = self.cls_prefix
+        super().__init__(*args, prefix=prefix, **kwargs)
+
+    @classmethod
+    def cite_schema_to_list(cls, cite_schema_dict):
+        element_list = cite_schema_dict[cls.cls_key]
+        return [cls.cls_form.cite_schema_to_dict(el) for el in element_list]
+
+    def to_list(self):
+        elements = []
+        for form in self:
+            # I had to kludge this. In normal usage, Django recognizes when a form in a formset has not changed
+            # and skips over its validation.
+            if len(form.cleaned_data) > 0:
+                elements.append(form.to_dict())
+        return elements
+
+
+class RelatedIdentifierBaseFormset(MetadataBaseFormset):
+    cls_prefix = 'relatedIdForm'
+    cls_key = 'relatedIdentifiers'
+    cls_form = RelatedIdentifierForm
+
+
 CreatorFormset = formset_factory(CreatorForm, formset=CreatorBaseFormset)
 ContributorFormset = formset_factory(ContributorForm, formset=ContributorBaseFormset)
+RelatedIdFormset = formset_factory(RelatedIdentifierForm, formset=RelatedIdentifierBaseFormset)
 
 
 class TypeRestrictedFileField(FileField):

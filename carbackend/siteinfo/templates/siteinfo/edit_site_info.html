@@ -69,6 +69,37 @@
             updateAllChildrenIndices('.contributor', 'contributorsForm');
             return false;
         });
+
+        // Related ID add/remove/move buttons //
+        $(document).on('click', '.add-relatedId-row', function(e){
+            e.preventDefault();
+            cloneMore('.relatedId', 'relatedIdForm', $(this));
+            return false;
+        });
+
+        $(document).on('click', '.remove-relatedId-row', function(e){
+            e.preventDefault();
+            deleteForm('relatedIdForm', '.relatedId', $(this));
+            return false;
+        });
+
+        $(document).on('click', '.shift-relatedId-up', function(e){
+            e.preventDefault();
+            moveForm('relatedIdForm', '.relatedId', $(this), -1);
+            return false;
+        });
+
+        $(document).on('click', '.shift-relatedId-down', function(e){
+            e.preventDefault();
+            moveForm('relatedIdForm', '.relatedId', $(this), 1);
+            return false;
+        });
+
+        $(document).ready(function() {
+            console.log('Ready');
+            updateAllChildrenIndices('.relatedId', 'relatedIdForm');
+            return false;
+        });
     </script>
 </head>
 <body>
@@ -240,6 +271,54 @@
         </table>
         </div>
         {% endfor %}
+        </div>
+
+        {{ relatedIdentifiers_formset.management_form }}
+        <div class="doi-metadata-section">Related Identifiers
+            {% for form in relatedIdentifiers_formset.forms %}
+            <div class="form-row relatedId">
+            <table class="pretty-table form-table">
+                <tr>
+                    <td><span class="line-number">{{forloop.counter}}</span></td>
+                    <th>{{form.relation_type.label}}</th>
+                    <td>{{form.relation_type}}
+                        {% for err in form.relation_type.errors %}
+                        <p>{{ err }}</p>
+                        {% endfor %}
+                    </td>
+
+                    <th>{{form.related_identifier_type.label}}</th>
+                    <td>{{form.related_identifier_type}}
+                        {% for err in form.related_identifier_type.errors %}
+                        <p>{{ err }}</p>
+                        {% endfor %}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="width: 9rem;">
+                        <span class="tooltip"><img src="{% static 'img/add-button.svg' %}" class="line-img add-relatedId-row">
+                        <span class="tooltiptext">Add a related ID</span></span>
+
+                        <span class="tooltip"><img src="{% static 'img/up-button.svg' %}" class="line-img shift-relatedId-up">
+                        <span class="tooltiptext">Move this ID up</span></span>
+
+                        <span class="tooltip"><img src="{% static 'img/down-button.svg' %}" class="line-img shift-relatedId-down">
+                        <span class="tooltiptext">Move this ID down</span></span>
+
+                        <span class="tooltip"><img src="{% static 'img/delete-button.svg' %}" class="line-img remove-relatedId-row">
+                        <span class="tooltiptext">Delete this ID</span></span>
+                    </td>
+                    <th>{{form.related_identifier.label}}</th>
+                    <td colspan="3">{{form.related_identifier}}
+                        {% for err in form.related_identifier.errors %}
+                        <p>{{ err }}</p>
+                        {% endfor %}
+                    </td>
+                </tr>
+            </table>
+            </div>
+            {% endfor %}
         </div>
 
         <br>
