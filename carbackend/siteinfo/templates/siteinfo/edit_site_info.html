@@ -100,6 +100,37 @@
             updateAllChildrenIndices('.relatedId', 'relatedIdForm');
             return false;
         });
+
+        // Funding ref add/remove/move buttons //
+        $(document).on('click', '.add-fundingRef-row', function(e){
+            e.preventDefault();
+            cloneMore('.fundingRef', 'fundingRefForm', $(this));
+            return false;
+        });
+
+        $(document).on('click', '.remove-fundingRef-row', function(e){
+            e.preventDefault();
+            deleteForm('fundingRefForm', '.fundingRef', $(this));
+            return false;
+        });
+
+        $(document).on('click', '.shift-fundingRef-up', function(e){
+            e.preventDefault();
+            moveForm('fundingRefForm', '.fundingRef', $(this), -1);
+            return false;
+        });
+
+        $(document).on('click', '.shift-fundingRef-down', function(e){
+            e.preventDefault();
+            moveForm('fundingRefForm', '.fundingRef', $(this), 1);
+            return false;
+        });
+
+        $(document).ready(function() {
+            console.log('Ready');
+            updateAllChildrenIndices('.fundingRef', 'fundingRefForm');
+            return false;
+        });
     </script>
 </head>
 <body>
@@ -316,6 +347,88 @@
                         {% endfor %}
                     </td>
                 </tr>
+            </table>
+            </div>
+            {% endfor %}
+        </div>
+
+        {{ FundingReference_formset.management_form }}
+        <div class="doi-metadata-section">Funding references
+            {% for form in FundingReference_formset.forms %}
+            <div class="form-row fundingRef">
+            <table class="pretty-table form-table">
+                <tr>
+                    <td><span class="line-number">{{forloop.counter}}</span></td>
+                    
+                    <th>{{form.funder_name.label}}</th>
+                    <td>{{form.funder_name}}
+                        {% for err in form.funder_name.errors %}
+                        <p>{{ err }}</p>
+                        {% endfor %}
+                    </td>
+
+                    <th>{{form.funder_identifier_type.label}}</th>
+                    <td>{{form.funder_identifier_type}}
+                    {% for err in form.funder_identifier_type.errors %}
+                    <p>{{ err }}</p>
+                    {% endfor %}
+                    </td>
+
+                    <th>{{form.funder_identifier.label}}</th>
+                    <td>{{form.funder_identifier}}
+                    {% for err in form.funder_identifier.errors %}
+                    <p>{{ err }}</p>
+                    {% endfor %}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="width: 9rem;">
+                        <span class="tooltip"><img src="{% static 'img/add-button.svg' %}" class="line-img add-fundingRef-row">
+                        <span class="tooltiptext">Add a related ID</span></span>
+
+                        <span class="tooltip"><img src="{% static 'img/up-button.svg' %}" class="line-img shift-fundingRef-up">
+                        <span class="tooltiptext">Move this ID up</span></span>
+
+                        <span class="tooltip"><img src="{% static 'img/down-button.svg' %}" class="line-img shift-fundingRef-down">
+                        <span class="tooltiptext">Move this ID down</span></span>
+
+                        <span class="tooltip"><img src="{% static 'img/delete-button.svg' %}" class="line-img remove-fundingRef-row">
+                        <span class="tooltiptext">Delete this ID</span></span>
+                    </td>
+
+                    <th>{{form.award_number.label}}</th>
+                    <td>{{form.award_number}}
+                        {% for err in form.award_number.errors %}
+                        <p>{{ err }}</p>
+                        {% endfor %}
+                    </td>
+
+                    <th>{{form.award_uri.label}}</th>
+                    <td>{{form.award_uri}}
+                        {% for err in form.award_uri.errors %}
+                        <p>{{ err }}</p>
+                        {% endfor %}
+                    </td>
+
+                    <th>{{form.award_title.label}}</th>
+                    <td>{{form.award_title}}
+                        {% for err in form.award_title.errors %}
+                        <p>{{ err }}</p>
+                        {% endfor %}
+                    </td>
+                </tr>
+
+                {% if form.non_field_errors %}
+                <tr><td colspan="7">
+                    Errors:
+                    <ul>
+                    {% for err in form.non_field_errors %}
+                    <li>{{ err }}</li>
+                    {% endfor %}
+                    </ul>
+                </td></tr>
+                {% endif %}
             </table>
             </div>
             {% endfor %}

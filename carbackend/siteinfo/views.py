@@ -202,7 +202,8 @@ class EditSiteInfo(View):
         doi_formsets = {
             forms.CreatorFormset.cls_key: cls._get_doi_formset(request.user, site_id, forms.CreatorFormset, post_data=post_data),
             forms.ContributorFormset.cls_key: cls._get_doi_formset(request.user, site_id, forms.ContributorFormset, post_data=post_data),
-            forms.RelatedIdFormset.cls_key: cls._get_doi_formset(request.user, site_id, forms.RelatedIdFormset, post_data=post_data)
+            forms.RelatedIdFormset.cls_key: cls._get_doi_formset(request.user, site_id, forms.RelatedIdFormset, post_data=post_data),
+            forms.FundingReferenceFormset.cls_key: cls._get_doi_formset(request.user, site_id, forms.FundingReferenceFormset, post_data=post_data)
         }
 
         return doi_formsets

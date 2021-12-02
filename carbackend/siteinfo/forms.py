@@ -429,6 +429,109 @@ class RelatedIdentifierForm(MetadataAbstractForm):
         return form_dict
 
 
+class FundingReferenceForm(MetadataAbstractForm):
+    FUND_NONE = '-'
+    FUND_ISNI = 'ISNI'
+    FUND_GRID = 'GRID'
+    FUND_CROSSREF = 'Crossref Funder'
+    FUND_OTHER = 'Other'
+
+    funder_identifier_type = forms.ChoiceField(initial='-', choices=[
+        (FUND_NONE, '-'),
+        (FUND_ISNI, 'ISNI'),
+        (FUND_GRID, 'GRID'),
+        (FUND_CROSSREF, 'Crossref Funder'),
+        (FUND_OTHER, 'Other')
+    ])
+
+    funder_name = forms.CharField(
+        label='Funder name',
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Enter funder name here',
+            'style': f'width:{_base_field_width};'
+        })
+    )
+
+    funder_identifier = forms.CharField(
+        label='Funder identifier (optional)',
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Enter funder identifier (e.g. GRID or Crossref string) here',
+            'style': f'width:{_base_field_width};'
+        })
+    )
+
+    award_number = forms.CharField(
+        label='Award number (optional)',
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Enter award number here',
+            'style': f'width:{_base_field_width};'
+        })
+    )
+
+    award_uri = forms.CharField(
+        label='Award URI (optional)',
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Enter a link to a webpage about the award',
+            'style': f'width:{_base_field_width};'
+        })
+    )
+
+    award_title = forms.CharField(
+        label='Award title (optional)',
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Enter the formal name of the award',
+            'style': f'width:{_base_field_width};'
+        })
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        no_id_type = cleaned_data.get('funder_identifier_type', self.FUND_NONE) == self.FUND_NONE
+        no_id = cleaned_data.get('funder_identifier', '') in (None, '')
+        if no_id_type != no_id:
+            raise forms.ValidationError('Must provide both or neither of the identifier and identifier type. '
+                                        '(Make the type equal "-" if no identifier desired.', 'xor_id_and_type')
+
+    def to_dict(self) -> dict:
+        def n2s(v):
+            return '' if v is None else v
+
+        name = self.cleaned_data['funder_name']
+        id_type = self.cleaned_data.get('funder_identifier_type', self.FUND_NONE)
+        identifier = n2s(self.cleaned_data.get('funder_identifier', ''))
+        number = n2s(self.cleaned_data.get('award_number', ''))
+        uri = n2s(self.cleaned_data.get('award_uri', ''))
+        title = n2s(self.cleaned_data.get('award_title', ''))
+
+        json_dict = {'funderName': name}
+        if id_type != self.FUND_NONE:
+            json_dict['funderIdentifierType'] = id_type
+        if identifier != '':
+            json_dict['funderIdentifier'] = identifier
+        if number != '':
+            json_dict['awardNumber'] = number
+        if uri != '':
+            json_dict['awardURI'] = uri
+        if title != '':
+            json_dict['awardTitle'] = title
+
+        return json_dict
+
+    @classmethod
+    def cite_schema_to_dict(cls, cite_schema_dict: dict) -> dict:
+        return {
+            'funder_name': cite_schema_dict['funderName'],
+            'funder_identifier_type': cite_schema_dict.get('funderIdentifierType', '-'),
+            'funder_identifier': cite_schema_dict.get('funderIdentifier', None),
+            'award_number': cite_schema_dict.get('awardNumber', None),
+            'award_uri': cite_schema_dict.get('awardURI', None),
+            'award_title': cite_schema_dict.get('awardTitle', None)
+        }
+
+
 class MetadataBaseFormset(forms.BaseFormSet):
     cls_prefix = None
     cls_key = None
@@ -444,7 +547,7 @@ class MetadataBaseFormset(forms.BaseFormSet):
 
     @classmethod
     def cite_schema_to_list(cls, cite_schema_dict):
-        element_list = cite_schema_dict[cls.cls_key]
+        element_list = cite_schema_dict.get(cls.cls_key, [])
         return [cls.cls_form.cite_schema_to_dict(el) for el in element_list]
 
     def to_list(self):
@@ -475,9 +578,16 @@ class RelatedIdentifierBaseFormset(MetadataBaseFormset):
     cls_form = RelatedIdentifierForm
 
 
+class FundingReferenceBaseFormset(MetadataBaseFormset):
+    cls_prefix = 'fundingRefForm'
+    cls_key = 'FundingReference'
+    cls_form = FundingReferenceForm
+
+
 CreatorFormset = formset_factory(CreatorForm, formset=CreatorBaseFormset)
 ContributorFormset = formset_factory(ContributorForm, formset=ContributorBaseFormset)
 RelatedIdFormset = formset_factory(RelatedIdentifierForm, formset=RelatedIdentifierBaseFormset)
+FundingReferenceFormset = formset_factory(FundingReferenceForm, formset=FundingReferenceBaseFormset)
 
 
 class TypeRestrictedFileField(FileField):
