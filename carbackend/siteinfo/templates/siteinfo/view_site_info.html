@@ -9,6 +9,7 @@
 <body>
     <h1>Public metadata for {{ info.long_name }} ({{ site_id }})</h1>
 
+    <div id="div-form-wrap">
     {% if msg %}<p class="alert">{{ msg }}</p>{% endif %}
 
     <table class="pretty-table">
@@ -22,12 +23,28 @@
         {% endfor %}
     </table>
 
+    {% for section, metadata in doi_tables.items %}
+    <div class="doi-metadata-section" style="width: 100%; max-width: 100%;">{{ section }}
+        <table class="pretty-table" style="width: 100%;">
+            <tr>
+                {% for colname in metadata.columns %}<th style="text-align: left;">{{ colname }}</th>{% endfor %}
+            </tr>
+            {% for row in metadata.table %}
+            <tr>
+                {% for cell in row %}<td>{{ cell }}</td>{% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    {% endfor %}
+
     <br>
     <div class="cr">
         {% if can_edit %}
         <form action="{% url 'siteinfo:edit' site_id %}"><button type="submit" class="link-button">Edit metadata</button></form>
         {% endif %}
         <form action="{% url 'siteinfo:index' %}"><button type="submit" class="link-button">Back to main</button></form>
+    </div>
     </div>
 </body>
 </html>

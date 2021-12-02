@@ -88,18 +88,54 @@ class ViewSiteInfo(View):
         except KeyError:
             raise Http404('No existing site information for site "{}"'.format(site_id))
 
+        metadata_json_file = _site_metadata_file(site_id, site_info['long_name'])
+        metadata_info = InfoFileLocks.read_metadata_file(metadata_json_file)
+
         msg_key = request.GET.get('msg', None)
         msg = self._top_messages.get(msg_key, '')
 
         context = {
             'site_id': site_id,
             'info': site_info,
+            'doi_tables': self._metadata_to_tables(metadata_info),
             'can_edit': _can_edit_site(request.user, site_id),
             'msg': msg
         }
 
-        # TODO: show DOI metadata here
         return render(request, 'siteinfo/view_site_info.html', context=context)
+
+    @classmethod
+    def _metadata_to_tables(cls, metadata_info):
+        formset_classes = {
+            'Site location': forms.SiteDoiForm,
+            'Creators': forms.CreatorFormset,
+            'Contributors': forms.ContributorFormset,
+            'Related identifiers': forms.RelatedIdFormset,
+            'Funding references': forms.FundingReferenceFormset
+        }
+
+        tables = dict()
+        for key, klass in formset_classes.items():
+            if key == 'Site location':
+                loc_info = forms.SiteDoiForm.json_to_dict(metadata_info)
+                info_list = [loc_info] if len(loc_info) > 0 else []
+            else:
+                info_list = klass.cite_schema_to_list(metadata_info)
+
+            if len(info_list) == 0:
+                continue
+
+            columns = list(info_list[0].keys())
+            table = [[row[c] for c in columns] for row in info_list]
+            tables[key] = {'columns': [cls._pretty_column_name(c, klass) for c in columns], 'table': table}
+
+        return tables
+
+    @staticmethod
+    def _pretty_column_name(colname, formset_class):
+        colname = colname.replace('_', ' ').capitalize()
+        colname = formset_class.prettify_column_name(colname)
+        return colname
 
 
 class EditSiteInfo(View):
@@ -164,32 +200,13 @@ class EditSiteInfo(View):
     def _save_doi_metadata(cls, request, site_nc_info, site_doi_form, doi_formsets, site_id):
         # TODO: add in derived or static metadata
         doi_metadata = {k: v.to_list() for k, v in doi_formsets.items()}
-        doi_metadata['titles'] = [{'title': f'TCCON data from {site_doi_form.data["site"]}, '
-                                            f'Release GGG2020.{site_nc_info.data_revision}'}]
-
-        geo_data = {
-            'pointLongitude': site_doi_form.data['location_longitude'],
-            'pointLatitude': site_doi_form.data['location_latitude']
-        }
-
-        if site_doi_form.data.get('location_place') is not None:
-            geo_data['geoLocationPlace'] = site_doi_form.data['location_place']
-
-        doi_metadata['GeoLocation'] = [geo_data]
+        site_doi_form.add_form_to_json(doi_metadata, site_nc_info.data_revision)
 
         # This avoids a Git error from trying to commit with no changes - happens if the user
         # submits the existing data.
         doi_metadata['__last_modified__'] = f'{timezone.now().strftime("%Y-%m-%d %H:%M:%S %Z")} by {request.user}'
-        metadata_json_file = cls._site_metadata_file(site_id, site_nc_info.long_name)
+        metadata_json_file = _site_metadata_file(site_id, site_nc_info.long_name)
         InfoFileLocks.update_metadata_repo(metadata_json_file, doi_metadata, request.user)
-
-    @staticmethod
-    def _site_metadata_file(site_id, site_long_name=None):
-        if site_long_name is None:
-            site_info = _get_site_info(site_id)
-            site_long_name = site_info['long_name']
-
-        return f'{site_id}_{site_long_name}.json'
 
     @staticmethod
     def _get_netcdf_form(user, site_id, post_data=None):
@@ -211,9 +228,16 @@ class EditSiteInfo(View):
 
     @staticmethod
     def _get_site_doi_form(user, site_id, post_data=None):
-        # TODO: populate from JSON if post data is none
         if _can_edit_site(user, site_id):
-            return forms.SiteDoiForm(post_data)
+            if post_data is not None:
+                return forms.SiteDoiForm(post_data)
+
+            metadata_file = _site_metadata_file(site_id)
+            doi_metadata = InfoFileLocks.read_metadata_file(metadata_file)
+            if doi_metadata:
+                return forms.SiteDoiForm.get_form_from_json(doi_metadata)
+            else:
+                return forms.SiteDoiForm()
         else:
             raise Http404('Sorry you cannot access the information form for site "{}"'.format(site_id))
 
@@ -238,7 +262,7 @@ class EditSiteInfo(View):
         if not _can_edit_all_site_info(user, site_id) and not _can_edit_site(user, site_id):
             raise Http404('Sorry, you cannot access the information form for site "{}"'.format(site_id))
 
-        metadata_file = cls._site_metadata_file(site_id)
+        metadata_file = _site_metadata_file(site_id)
         try:
             cite_schema = InfoFileLocks.read_metadata_file(metadata_file)
         except FileNotFoundError:
@@ -455,6 +479,14 @@ def _get_site_info(site_id):
         return all_site_info[site_id]
     except KeyError:
         raise Http404('No existing site information for site "{}"'.format(site_id))
+
+
+def _site_metadata_file(site_id, site_long_name=None):
+    if site_long_name is None:
+        site_info = _get_site_info(site_id)
+        site_long_name = site_info['long_name']
+
+    return f'{site_id}_{site_long_name}.json'
 
 
 def _find_flag_key(site_id, flag_id, flag_dict):

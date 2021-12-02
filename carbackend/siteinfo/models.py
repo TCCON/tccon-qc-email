@@ -112,9 +112,12 @@ class InfoFileLocks(models.Model):
         return cls.objects.execute(json_file, callback)
 
     @classmethod
-    def read_metadata_file(cls, metadata_file):
+    def read_metadata_file(cls, metadata_file, allow_missing=True):
         def callback():
             json_file = settings.METADATA_DIR / metadata_file
+            if not json_file.exists() and allow_missing:
+                return dict()
+
             with open(json_file) as f:
                 return json.load(f)
 

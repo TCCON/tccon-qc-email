@@ -180,6 +180,40 @@ class SiteDoiForm(forms.Form):
         # Keep it as a string, that's how it is stored in the JSON
         return data
 
+    def add_form_to_json(self, doi_metadata, data_revision):
+        doi_metadata['titles'] = [{'title': f'TCCON data from {self.cleaned_data["site"]}, '
+                                            f'Release GGG2020.{data_revision}'}]
+
+        geo_data = {
+            'pointLongitude': self.cleaned_data['location_longitude'],
+            'pointLatitude': self.cleaned_data['location_latitude']
+        }
+
+        if self.cleaned_data.get('location_place') is not None:
+            geo_data['geoLocationPlace'] = self.cleaned_data['location_place']
+
+        doi_metadata['GeoLocation'] = [geo_data]
+
+    @classmethod
+    def json_to_dict(cls, doi_metadata):
+        title = doi_metadata['titles'][0]['title']
+        geo_data = doi_metadata['GeoLocation'][0]
+        return {
+            'site': re.search(r'TCCON data from (.+), Release GGG2020', title).group(1),
+            'location_place': geo_data.get('geoLocationPlace', None),
+            'location_longitude': geo_data['pointLongitude'],
+            'location_latitude': geo_data['pointLatitude'],
+        }
+
+    @classmethod
+    def get_form_from_json(cls, doi_metadata):
+        initial_data = cls.json_to_dict(doi_metadata)
+        return cls(initial=initial_data)
+
+    @classmethod
+    def prettify_column_name(cls, colname):
+        return colname
+
 
 class CreatorForm(MetadataAbstractForm):
     family_name = forms.CharField(
@@ -615,6 +649,10 @@ class MetadataBaseFormset(forms.BaseFormSet):
                 elements.append(form.to_dict())
         return elements
 
+    @classmethod
+    def prettify_column_name(cls, colname):
+        return colname
+
 
 class CreatorBaseFormset(MetadataBaseFormset):
     cls_prefix = 'creatorsForm'
@@ -638,6 +676,13 @@ class FundingReferenceBaseFormset(MetadataBaseFormset):
     cls_prefix = 'fundingRefForm'
     cls_key = 'FundingReference'
     cls_form = FundingReferenceForm
+
+    @classmethod
+    def prettify_column_name(cls, colname):
+        if 'uri' in colname:
+            return re.sub(r'\suri', ' URI', colname)
+        else:
+            return colname
 
 
 CreatorFormset = formset_factory(CreatorForm, formset=CreatorBaseFormset)
