@@ -27,11 +27,33 @@ def convert_ggg2014_to_ggg2020a(input_file, output_file, indent=None):
         metadata['titles'][0]['title']
     )
 
-    # May need to check that all names are family, given (i.e. that there is a comma)
-    # - Paul's contributor in pasadena was not.
+    # Convert from just "name" to that plus family and given name, if that's sensible
+    for creator in metadata['creators']:
+        convert_name(creator, True, 'creator')
+    for contributor in metadata['contributors']:
+        is_not_person = contributor['contributorType'] in {'HostingInstitution', 'RegistrationAgency', 'RegistrationAuthority', 'ResearchGroup'}
+        convert_name(contributor, not is_not_person, 'contributor')
 
     with open(output_file, 'w') as f:
         json.dump(metadata, f, indent=indent)
+
+
+def convert_name(name_dict, is_person, category):
+    name = name_dict.pop('name')
+    if is_person:
+        if name.count(',') != 1:
+            print(f'Name {name} is not in expected format')
+            given = input('Type the given name: ')
+            family = input('Type the family name: ')
+        else:
+            family, given = [x.strip() for x in name.split(',')]
+
+        name_dict[f'{category}Name'] = f'{family}, {given}'
+        name_dict['givenName'] = given
+        name_dict['familyName'] = family
+    else:
+        name_dict[f'{category}Name'] = name
+
 
 
 if __name__ == '__main__':

@@ -259,13 +259,30 @@ class CreatorForm(MetadataAbstractForm):
         })
     )
 
+    is_not_person = forms.BooleanField(
+        label='Institution/group?',
+        initial=False,
+        help_text='Check if this is an institution, group, or other entity, rather than an individual person.',
+        widget=forms.CheckboxInput(attrs={
+            'style': 'width: 1rem;'
+        })
+    )
+
+    _null_values = {'is_not_person': [False]}
+
     def to_dict(self):
         data = self.cleaned_data
         json_dict = {
             'affiliation': [{'name': data['affiliation']}],
-            'name': f'{data["family_name"]}, {data["given_name"]}',
             'nameIdentifiers': []
         }
+
+        if data['is_not_person']:
+            json_dict['creatorName'] = data['family_name']
+        else:
+            json_dict['creatorName'] = f'{data["family_name"]}, {data["given_name"]}'
+            json_dict['givenName'] = data['given_name']
+            json_dict['familyName'] = data['family_name']
 
         if data.get('orcid'):
             json_dict['nameIdentifiers'].append({
@@ -281,8 +298,14 @@ class CreatorForm(MetadataAbstractForm):
 
     @classmethod
     def cite_schema_to_dict(cls, cite_schema_dict):
-        print(cls.__name__, cite_schema_dict['name'])
-        family_name, given_name = cite_schema_dict['name'].split(',', maxsplit=1)
+        is_not_person = 'givenName' not in cite_schema_dict
+        if is_not_person:
+            family_name = cite_schema_dict['creatorName']
+            given_name = None
+        else:
+            family_name = cite_schema_dict['familyName']
+            given_name = cite_schema_dict['givenName']
+
         affiliation = cite_schema_dict['affiliation'][0]['name'] if 'affiliation' in cite_schema_dict else None
         orcid = None
         researcher_id = None
@@ -305,6 +328,15 @@ class CreatorForm(MetadataAbstractForm):
             form_dict['researcher_id'] = researcher_id
 
         return form_dict
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # This is super-hacky, but checkboxes are weird. Apparently, if they are not checked, they don't POST anything.
+        # But since this is a required field, Django sends back an error. Since errors are added during cleaning,
+        # we have to both set a default value of False *and* remove the error it created.
+        cleaned_data.setdefault('is_not_person', False)
+        self.errors.pop('is_not_person', None)
+        return cleaned_data
 
 
 class ContributorForm(CreatorForm):
@@ -384,11 +416,13 @@ class ContributorForm(CreatorForm):
 
     def to_dict(self):
         json_dict = super().to_dict()
+        json_dict['contributorName'] = json_dict.pop('creatorName')
         json_dict['contributorType'] = self.cleaned_data['contributor_type']
         return json_dict
 
     @classmethod
     def cite_schema_to_dict(cls, cite_schema_dict):
+        cite_schema_dict['creatorName'] = cite_schema_dict.pop('contributorName')
         form_dict = super().cite_schema_to_dict(cite_schema_dict)
         form_dict['contributor_type'] = cite_schema_dict['contributorType']
         return form_dict

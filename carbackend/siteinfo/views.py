@@ -179,6 +179,7 @@ class EditSiteInfo(View):
         doi_formsets = self._make_doi_formset_dict(request, site_id, with_post=True)
 
         # Only submit changes if all of the various forms are valid
+        # import pdb; pdb.set_trace()
         if netcdf_form.is_valid() and site_doi_form.is_valid() and all(fs.is_valid() for fs in doi_formsets.values()):
             updated_site_info = self._save_netcdf_metadata(request, netcdf_form, site_id)
             self._save_doi_metadata(request, updated_site_info, site_doi_form, doi_formsets, site_id)

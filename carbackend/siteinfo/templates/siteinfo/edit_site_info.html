@@ -223,6 +223,9 @@
             <tr>
                 <td><span class="line-number">{{forloop.counter}}</span></td>
 
+                <th>{{form.is_not_person.label}}</th>
+                <td>{{form.is_not_person}}</td>
+
                 <th>{{form.family_name.label}}</th>
                 <td>{{form.family_name}}
                     {% for err in form.family_name.errors %}
@@ -260,7 +263,7 @@
                 </td>
 
                 <th>{{form.affiliation.label}}</th>
-                <td colspan="3">{{form.affiliation}}
+                <td colspan="5">{{form.affiliation}}
                     {% for err in form.affiliation.errors %}
                     <p class="form-error-box">{{ err }}</p>
                     {% endfor %}
@@ -286,6 +289,9 @@
         <table class="pretty-table form-table">
             <tr>
                 <td><span class="line-number">{{forloop.counter}}</span></td>
+                <th>{{form.is_not_person.label}}</th>
+                <td>{{form.is_not_person}}</td>
+
                 <th>{{form.contributor_type.label}}</th>
                 <td>{{form.contributor_type}}
                     {% for err in form.contributor_type.errors %}
@@ -331,7 +337,7 @@
                 </td>
 
                 <th>{{form.affiliation.label}}</th>
-                <td colspan="5">{{form.affiliation}}
+                <td colspan="7">{{form.affiliation}}
                     {% for err in form.affiliation.errors %}
                     <p class="form-error-box">{{ err }}</p>
                     {% endfor %}
