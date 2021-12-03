@@ -197,7 +197,6 @@ class EditSiteInfo(View):
             return render(request, 'siteinfo/edit_site_info.html', context=context)
 
     def _save_netcdf_metadata(self, request, form, site_id):
-        # TODO: turn this function back on
         # form.save(user=request.user, site_info=self._get_site_info(site_id))
         site_info = _get_site_info(site_id)
         update = form.save(commit=False)
@@ -208,7 +207,7 @@ class EditSiteInfo(View):
 
         with transaction.atomic():
             self._write_site_info(update, site_id)
-            # update.save()  # UNDO
+            update.save()  # UNDO
 
         return update
 
