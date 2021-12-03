@@ -199,6 +199,10 @@ elif VM == Vms.TCCONDATA:
 else:
     STATIC_URL = '/static/'
 
+STATICFILES_DIRS = [
+    BASE_DIR / 'global_static'    
+]
+
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gps.caltech.edu'
@@ -241,6 +245,10 @@ if VM == Vms.TCCONDATA:
     # reasons. This way `write_netcdf` and the portal are guaranteed to use the same mapping. It does not 
     # need to be in a writable location, only readable.
     RELEASE_FLAGS_DEF_FILE = Path('/var/www/tccon-metadata/release_flag_definitions.json')
+
+    # This is the path where the JSONs with extra metadata for the DOIs are written. It needs to be writable
+    # by the Django process
+    METADATA_DIR = Path('/var/www/tccon-metadata/doi-metadata')
 
     # This is the path to a .json file that specifies certain configuration elements that we might want to
     # change without having to reload the Django process, such as the point of contact and the maximum release
