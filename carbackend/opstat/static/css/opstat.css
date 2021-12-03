@@ -220,6 +220,10 @@ td {
     margin: 6px 0;
 }
 
+.midline {
+    vertical-align: middle;
+}
+
  /* Tooltip container */
 .tooltip {
   position: relative;
@@ -229,7 +233,7 @@ td {
 /* Tooltip text */
 .tooltip .tooltiptext {
   visibility: hidden;
-  width: 120px;
+  width: 240px;
   background-color: #555;
   color: #fff;
   text-align: center;

@@ -185,13 +185,24 @@
         <div class="doi-metadata-section">Site description
             <table class="pretty-table form-table">
                 <tr>
-                    <th>{{ site_doi_form.site.label }}</th>
+                    <th>{{ site_doi_form.site.label }}
+                        {% if site_doi_form.site.help_text %}
+                        <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                        <span class="tooltiptext">{{ site_doi_form.site.help_text }}</span></span>
+                        {% endif %}
+                    </th>
                     <td>{{ site_doi_form.site }}
                         {% for err in site_doi_form.site.errors %}
                         <p class="form-error-box">{{ err }}</p>
                         {% endfor %}
                     </td>
-                    <th>{{ site_doi_form.location_latitude.label }}</th>
+
+                    <th>{{ site_doi_form.location_latitude.label }}
+                        {% if site_doi_form.location_latitude.help_text %}
+                        <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                        <span class="tooltiptext">{{ site_doi_form.location_latitude.help_text }}</span></span>
+                        {% endif %}
+                    </th>
                     <td>{{ site_doi_form.location_latitude }}
                         {% for err in site_doi_form.location_latitude.errors %}
                         <p class="form-error-box">{{ err }}</p>
@@ -199,13 +210,24 @@
                     </td>
                 </tr>
                 <tr>
-                    <th>{{ site_doi_form.location_place.label }}</th>
+                    <th>{{ site_doi_form.location_place.label }}
+                        {% if site_doi_form.location_place.help_text %}
+                        <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                        <span class="tooltiptext">{{ site_doi_form.location_place.help_text }}</span></span>
+                        {% endif %}
+                    </th>
                     <td>{{ site_doi_form.location_place }}
                         {% for err in site_doi_form.location_place.errors %}
                         <p class="form-error-box">{{ err }}</p>
                         {% endfor %}
                     </td>
-                    <th>{{ site_doi_form.location_longitude.label }}</th>
+
+                    <th>{{ site_doi_form.location_longitude.label }}
+                        {% if site_doi_form.location_longitude.help_text %}
+                        <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                        <span class="tooltiptext">{{ site_doi_form.location_longitude.help_text }}</span></span>
+                        {% endif %}
+                    </th>
                     <td>{{ site_doi_form.location_longitude }}
                         {% for err in site_doi_form.location_longitude.errors %}
                         <p class="form-error-box">{{ err }}</p>
@@ -223,24 +245,44 @@
             <tr>
                 <td><span class="line-number">{{forloop.counter}}</span></td>
 
-                <th>{{form.is_not_person.label}}</th>
+                <th>{{form.is_not_person.label}}
+                    {% if form.is_not_person.help_text %}
+                    <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                    <span class="tooltiptext">{{ form.is_not_person.help_text }}</span></span>
+                    {% endif %}
+                </th>
                 <td>{{form.is_not_person}}</td>
 
-                <th>{{form.family_name.label}}</th>
+                <th>{{form.family_name.label}}
+                    {% if form.family_name.help_text %}
+                    <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                    <span class="tooltiptext">{{ form.family_name.help_text }}</span></span>
+                    {% endif %}
+                </th>
                 <td>{{form.family_name}}
                     {% for err in form.family_name.errors %}
                     <p class="form-error-box">{{ err }}</p>
                     {% endfor %}
                 </td>
 
-                <th>{{form.given_name.label}}</th>
+                <th>{{form.given_name.label}}
+                    {% if form.given_name.help_text %}
+                    <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                    <span class="tooltiptext">{{ form.given_name.help_text }}</span></span>
+                    {% endif %}
+                </th>
                 <td>{{form.given_name}}
                     {% for err in form.given_name.errors %}
                     <p class="form-error-box">{{ err }}</p>
                     {% endfor %}
                 </td>
 
-                <th>{{form.orcid.label}}</th>
+                <th>{{form.orcid.label}}
+                    {% if form.orcid.help_text %}
+                    <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                    <span class="tooltiptext">{{ form.orcid.help_text }}</span></span>
+                    {% endif %}
+                </th>
                 <td>{{form.orcid}}
                     {% for err in form.orcid.errors %}
                     <p class="form-error-box">{{ err }}</p>
@@ -262,14 +304,24 @@
                     <span class="tooltiptext">Delete this creator</span></span>
                 </td>
 
-                <th>{{form.affiliation.label}}</th>
+                <th>{{form.affiliation.label}}
+                    {% if form.affiliation.help_text %}
+                    <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                    <span class="tooltiptext">{{ form.affiliation.help_text }}</span></span>
+                    {% endif %}
+                </th>
                 <td colspan="5">{{form.affiliation}}
                     {% for err in form.affiliation.errors %}
                     <p class="form-error-box">{{ err }}</p>
                     {% endfor %}
                 </td>
 
-                <th>{{form.researcher_id.label}}</th>
+                <th>{{form.researcher_id.label}}
+                    {% if form.researcher_id.help_text %}
+                    <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                    <span class="tooltiptext">{{ form.researcher_id.help_text }}</span></span>
+                    {% endif %}
+                </th>
                 <td>{{form.researcher_id}}
                     {% for err in form.researcher_id.errors %}
                     <p class="form-error-box">{{ err }}</p>
@@ -289,31 +341,49 @@
         <table class="pretty-table form-table">
             <tr>
                 <td><span class="line-number">{{forloop.counter}}</span></td>
-                <th>{{form.is_not_person.label}}</th>
-                <td>{{form.is_not_person}}</td>
 
-                <th>{{form.contributor_type.label}}</th>
+                <th>{{form.contributor_type.label}}
+                    {% if form.contributor_type.help_text %}
+                    <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                    <span class="tooltiptext">{{ form.contributor_type.help_text }}</span></span>
+                    {% endif %}
+                </th>
                 <td>{{form.contributor_type}}
                     {% for err in form.contributor_type.errors %}
                     <p class="form-error-box">{{ err }}</p>
                     {% endfor %}
                 </td>
 
-                <th>{{form.family_name.label}}</th>
+                <th>{{form.family_name.label}}
+                    {% if form.family_name.help_text %}
+                    <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                    <span class="tooltiptext">{{ form.family_name.help_text }}</span></span>
+                    {% endif %}
+                </th>
                 <td>{{form.family_name}}
                     {% for err in form.family_name.errors %}
                     <p class="form-error-box">{{ err }}</p>
                     {% endfor %}
                 </td>
 
-                <th>{{form.given_name.label}}</th>
+                <th>{{form.given_name.label}}
+                    {% if form.given_name.help_text %}
+                    <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                    <span class="tooltiptext">{{ form.given_name.help_text }}</span></span>
+                    {% endif %}
+                </th>
                 <td>{{form.given_name}}
                     {% for err in form.given_name.errors %}
                     <p class="form-error-box">{{ err }}</p>
                     {% endfor %}
                 </td>
 
-                <th>{{form.orcid.label}}</th>
+                <th>{{form.orcid.label}}
+                    {% if form.orcid.help_text %}
+                    <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                    <span class="tooltiptext">{{ form.orcid.help_text }}</span></span>
+                    {% endif %}
+                </th>
                 <td>{{form.orcid}}
                     {% for err in form.orcid.errors %}
                     <p class="form-error-box">{{ err }}</p>
@@ -336,14 +406,32 @@
                     <span class="tooltiptext">Delete this contributor</span></span>
                 </td>
 
-                <th>{{form.affiliation.label}}</th>
-                <td colspan="7">{{form.affiliation}}
+                <th>{{form.is_not_person.label}}
+                    {% if form.is_not_person.help_text %}
+                    <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                    <span class="tooltiptext">{{ form.is_not_person.help_text }}</span></span>
+                    {% endif %}
+                </th>
+                <td>{{form.is_not_person}}</td>
+
+                <th>{{form.affiliation.label}}
+                    {% if form.affiliation.help_text %}
+                    <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                    <span class="tooltiptext">{{ form.affiliation.help_text }}</span></span>
+                    {% endif %}
+                </th>
+                <td colspan="3">{{form.affiliation}}
                     {% for err in form.affiliation.errors %}
                     <p class="form-error-box">{{ err }}</p>
                     {% endfor %}
                 </td>
 
-                <th>{{form.researcher_id.label}}</th>
+                <th>{{form.researcher_id.label}}
+                    {% if form.researcher_id.help_text %}
+                    <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                    <span class="tooltiptext">{{ form.researcher_id.help_text }}</span></span>
+                    {% endif %}
+                </th>
                 <td>{{form.researcher_id}}
                     {% for err in form.researcher_id.errors %}
                     <p class="form-error-box">{{ err }}</p>
@@ -362,14 +450,24 @@
             <table class="pretty-table form-table">
                 <tr>
                     <td><span class="line-number">{{forloop.counter}}</span></td>
-                    <th>{{form.relation_type.label}}</th>
+                    <th>{{form.relation_type.label}}
+                        {% if form.relation_type.help_text %}
+                    <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                    <span class="tooltiptext">{{ form.relation_type.help_text }}</span></span>
+                    {% endif %}
+                    </th>
                     <td>{{form.relation_type}}
                         {% for err in form.relation_type.errors %}
                         <p class="form-error-box">{{ err }}</p>
                         {% endfor %}
                     </td>
 
-                    <th>{{form.related_identifier_type.label}}</th>
+                    <th>{{form.related_identifier_type.label}}
+                        {% if form.related_identifier_type.help_text %}
+                    <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                    <span class="tooltiptext">{{ form.related_identifier_type.help_text }}</span></span>
+                    {% endif %}
+                    </th>
                     <td>{{form.related_identifier_type}}
                         {% for err in form.related_identifier_type.errors %}
                         <p class="form-error-box">{{ err }}</p>
@@ -391,7 +489,12 @@
                         <span class="tooltip"><img src="{% static 'img/delete-button.svg' %}" class="line-img remove-relatedId-row">
                         <span class="tooltiptext">Delete this ID</span></span>
                     </td>
-                    <th>{{form.related_identifier.label}}</th>
+                    <th>{{form.related_identifier.label}}
+                        {% if form.related_identifier.help_text %}
+                    <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                    <span class="tooltiptext">{{ form.related_identifier.help_text }}</span></span>
+                    {% endif %}
+                    </th>
                     <td colspan="3">{{form.related_identifier}}
                         {% for err in form.related_identifier.errors %}
                         <p class="form-error-box">{{ err }}</p>
@@ -411,21 +514,36 @@
                 <tr>
                     <td><span class="line-number">{{forloop.counter}}</span></td>
 
-                    <th>{{form.funder_name.label}}</th>
+                    <th>{{form.funder_name.label}}
+                        {% if form.funder_name.help_text %}
+                    <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                    <span class="tooltiptext">{{ form.funder_name.help_text }}</span></span>
+                    {% endif %}
+                    </th>
                     <td>{{form.funder_name}}
                         {% for err in form.funder_name.errors %}
                         <p class="form-error-box">{{ err }}</p>
                         {% endfor %}
                     </td>
 
-                    <th>{{form.funder_identifier_type.label}}</th>
+                    <th>{{form.funder_identifier_type.label}}
+                        {% if form.funder_identifier_type.help_text %}
+                    <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                    <span class="tooltiptext">{{ form.funder_identifier_type.help_text }}</span></span>
+                    {% endif %}
+                    </th>
                     <td>{{form.funder_identifier_type}}
                     {% for err in form.funder_identifier_type.errors %}
                     <p class="form-error-box">{{ err }}</p>
                     {% endfor %}
                     </td>
 
-                    <th>{{form.funder_identifier.label}}</th>
+                    <th>{{form.funder_identifier.label}}
+                        {% if form.funder_identifier.help_text %}
+                    <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                    <span class="tooltiptext">{{ form.funder_identifier.help_text }}</span></span>
+                    {% endif %}
+                    </th>
                     <td>{{form.funder_identifier}}
                     {% for err in form.funder_identifier.errors %}
                     <p class="form-error-box">{{ err }}</p>
@@ -448,21 +566,36 @@
                         <span class="tooltiptext">Delete this ID</span></span>
                     </td>
 
-                    <th>{{form.award_number.label}}</th>
+                    <th>{{form.award_number.label}}
+                        {% if form.award_number.help_text %}
+                    <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                    <span class="tooltiptext">{{ form.award_number.help_text }}</span></span>
+                    {% endif %}
+                    </th>
                     <td>{{form.award_number}}
                         {% for err in form.award_number.errors %}
                         <p class="form-error-box">{{ err }}</p>
                         {% endfor %}
                     </td>
 
-                    <th>{{form.award_uri.label}}</th>
+                    <th>{{form.award_uri.label}}
+                        {% if form.award_uri.help_text %}
+                    <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                    <span class="tooltiptext">{{ form.award_uri.help_text }}</span></span>
+                    {% endif %}
+                    </th>
                     <td>{{form.award_uri}}
                         {% for err in form.award_uri.errors %}
                         <p class="form-error-box">{{ err }}</p>
                         {% endfor %}
                     </td>
 
-                    <th>{{form.award_title.label}}</th>
+                    <th>{{form.award_title.label}}
+                        {% if form.award_title.help_text %}
+                    <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                    <span class="tooltiptext">{{ form.award_title.help_text }}</span></span>
+                    {% endif %}
+                    </th>
                     <td>{{form.award_title}}
                         {% for err in form.award_title.errors %}
                         <p class="form-error-box">{{ err }}</p>

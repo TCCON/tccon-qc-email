@@ -218,8 +218,8 @@ class SiteDoiForm(forms.Form):
 class CreatorForm(MetadataAbstractForm):
     family_name = forms.CharField(
         label='Family name',
+        help_text='For individuals, give the family name. For institutions, research groups, or other entities, put the full name here and leave "given name" blank.',
         widget=forms.TextInput(attrs={
-            # 'class': 'form-control',  # can update this if I write CSS for it
             'placeholder': 'Enter family name here',
             'style': f'width:{_base_field_width};'
         })
@@ -227,6 +227,7 @@ class CreatorForm(MetadataAbstractForm):
 
     given_name = forms.CharField(
         label='Given name(s)',
+        required=False,
         widget=forms.TextInput(attrs={
             'placeholder': 'Enter given name(s) or initials here.',
             'style': f'width:{_base_field_width};'
@@ -244,6 +245,7 @@ class CreatorForm(MetadataAbstractForm):
     orcid = forms.CharField(
         label='ORCID (optional)',
         required=False,
+        help_text='An ORCID usually has the form NNNN-NNNN-NNNN-NNNN, i.e. 16 numbers, though letters are included occasionally',
         widget=forms.TextInput(attrs={
             'placeholder': 'Enter ORCID here',
             'style': f'width:{_base_field_width};'
@@ -253,6 +255,7 @@ class CreatorForm(MetadataAbstractForm):
     researcher_id = forms.CharField(
         label='Researcher ID (optional)',
         required=False,
+        help_text='A researcher ID usually has the form X-NNNN-NNNN, where X is a letter and N a number',
         widget=forms.TextInput(attrs={
             'placeholder': 'Enter Researcher ID here',
             'style': f'width:{_base_field_width};'
@@ -342,14 +345,6 @@ class CreatorForm(MetadataAbstractForm):
 class ContributorForm(CreatorForm):
     # A contributor has most of the same fields as a creator, with one extra: a type
     # Also given name and affiliation are not required
-    given_name = forms.CharField(
-        label='Given name(s)',
-        required=False,
-        widget=forms.TextInput(attrs={
-            'placeholder': 'Enter given name(s) or initials here.',
-            'style': f'width:{_base_field_width};'
-        })
-    )
 
     affiliation = forms.CharField(
         label='Affiliation',
@@ -450,28 +445,32 @@ class RelatedIdentifierForm(MetadataAbstractForm):
     REL_VAR_OF = 'IsVariantFormOf'
     REL_ORIG_OF = 'IsOriginalFormOf'
 
-    relation_type = forms.ChoiceField(initial='-', choices=[
-        (REL_NONE, '-'),
-        (REL_CITED_BY, 'Is cited by'),
-        (REL_CITES, 'Cites'),
-        (REL_SUPP_TO, 'Is supplement to'),
-        (REL_SUPP_BY, 'Is supplemented by'),
-        (REL_CONT_BY, 'Is continued by'),
-        (REL_CONTS, 'Continues'),
-        (REL_HAS_META, 'Has metadata'),
-        (REL_IS_META_FOR, 'Is metadata for'),
-        (REL_NEW_VER, 'Is new version of'),
-        (REL_PREV_VER, 'Is previous version of'),
-        (REL_PART_OF, 'Is part of'),
-        (REL_HAS_PART, 'Has part'),
-        (REL_REF_BY, 'Is referenced by'),
-        (REL_REFS, 'References'),
-        (REL_DOC_BY, 'Is documented by'),
-        (REL_DOCS, 'Documents'),
-        (REL_COMP_BY, 'Is compiled by'),
-        (REL_VAR_OF, 'Is variant form of'),
-        (REL_ORIG_OF, 'Is original form of')
-    ])
+    relation_type = forms.ChoiceField(
+        initial='-',
+        help_text='How the TCCON dataset relates to this resource you are adding, e.g. "TCCON data is cited by this article"',
+        choices=[
+            (REL_NONE, '-'),
+            (REL_CITED_BY, 'Is cited by'),
+            (REL_CITES, 'Cites'),
+            (REL_SUPP_TO, 'Is supplement to'),
+            (REL_SUPP_BY, 'Is supplemented by'),
+            (REL_CONT_BY, 'Is continued by'),
+            (REL_CONTS, 'Continues'),
+            (REL_HAS_META, 'Has metadata'),
+            (REL_IS_META_FOR, 'Is metadata for'),
+            (REL_NEW_VER, 'Is new version of'),
+            (REL_PREV_VER, 'Is previous version of'),
+            (REL_PART_OF, 'Is part of'),
+            (REL_HAS_PART, 'Has part'),
+            (REL_REF_BY, 'Is referenced by'),
+            (REL_REFS, 'References'),
+            (REL_DOC_BY, 'Is documented by'),
+            (REL_DOCS, 'Documents'),
+            (REL_COMP_BY, 'Is compiled by'),
+            (REL_VAR_OF, 'Is variant form of'),
+            (REL_ORIG_OF, 'Is original form of')
+        ]
+    )
 
     TYPE_NONE = '-'
     TYPE_ARK = 'ARK'
