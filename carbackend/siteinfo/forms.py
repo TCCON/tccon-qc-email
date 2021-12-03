@@ -184,10 +184,10 @@ class SiteDoiForm(forms.Form):
         doi_metadata['titles'] = [{'title': f'TCCON data from {self.cleaned_data["site"]}, '
                                             f'Release GGG2020.{data_revision}'}]
 
-        geo_data = {
+        geo_data = {'geoLocationPoint': {
             'pointLongitude': self.cleaned_data['location_longitude'],
             'pointLatitude': self.cleaned_data['location_latitude']
-        }
+        }}
 
         if self.cleaned_data.get('location_place') is not None:
             geo_data['geoLocationPlace'] = self.cleaned_data['location_place']
@@ -201,8 +201,8 @@ class SiteDoiForm(forms.Form):
         return {
             'site': re.search(r'TCCON data from (.+), Release GGG2020', title).group(1),
             'location_place': geo_data.get('geoLocationPlace', None),
-            'location_longitude': geo_data['pointLongitude'],
-            'location_latitude': geo_data['pointLatitude'],
+            'location_longitude': geo_data['geoLocationPoint']['pointLongitude'],
+            'location_latitude': geo_data['geoLocationPoint']['pointLatitude'],
         }
 
     @classmethod
@@ -281,11 +281,13 @@ class CreatorForm(MetadataAbstractForm):
 
     @classmethod
     def cite_schema_to_dict(cls, cite_schema_dict):
+        print(cls.__name__, cite_schema_dict['name'])
         family_name, given_name = cite_schema_dict['name'].split(',', maxsplit=1)
-        affiliation = cite_schema_dict['affiliation'][0]['name']
+        affiliation = cite_schema_dict['affiliation'][0]['name'] if 'affiliation' in cite_schema_dict else None
         orcid = None
         researcher_id = None
-        for identifier in cite_schema_dict['nameIdentifiers']:
+
+        for identifier in cite_schema_dict.get('nameIdentifiers', []):
             if identifier['nameIdentifierScheme'] == 'ORCID':
                 orcid = identifier['nameIdentifier']
             elif identifier['nameIdentifierScheme'] == 'ResearcherID':
@@ -571,6 +573,7 @@ class FundingReferenceForm(MetadataAbstractForm):
 
     award_title = forms.CharField(
         label='Award title (optional)',
+        required=False,
         widget=forms.TextInput(attrs={
             'placeholder': 'Enter the formal name of the award',
             'style': f'width:{_base_field_width};'

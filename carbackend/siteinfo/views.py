@@ -126,7 +126,7 @@ class ViewSiteInfo(View):
                 continue
 
             columns = list(info_list[0].keys())
-            table = [[row[c] for c in columns] for row in info_list]
+            table = [[row.get(c, '') for c in columns] for row in info_list]
             tables[key] = {'columns': [cls._pretty_column_name(c, klass) for c in columns], 'table': table}
 
         return tables
@@ -160,7 +160,15 @@ class EditSiteInfo(View):
 
         # import pdb; pdb.set_trace()
 
-        context = self._make_context(user, netcdf_form, site_doi_form, doi_formsets, site_id, site_info)
+        context = self._make_context(
+            user=user,
+            is_post=False,
+            netcdf_form=netcdf_form,
+            site_doi_form=site_doi_form,
+            doi_formsets=doi_formsets,
+            site_id=site_id,
+            site_info=site_info
+        )
         return render(request, 'siteinfo/edit_site_info.html', context=context)
 
     def post(self, request, site_id):
@@ -177,7 +185,14 @@ class EditSiteInfo(View):
             url = '{}/?msg=success'.format(reverse('siteinfo:view', args=(site_id,)).rstrip('?').rstrip('/'))
             return HttpResponseRedirect(url)
         else:
-            context = self._make_context(request.user, netcdf_form, site_doi_form, doi_formsets, site_id)
+            context = self._make_context(
+                user=request.user,
+                is_post=True,
+                netcdf_form=netcdf_form,
+                site_doi_form=site_doi_form,
+                doi_formsets=doi_formsets,
+                site_id=site_id
+            )
             return render(request, 'siteinfo/edit_site_info.html', context=context)
 
     def _save_netcdf_metadata(self, request, form, site_id):
@@ -285,17 +300,22 @@ class EditSiteInfo(View):
         utils.backup_file_rolling(settings.SITE_INFO_FILE)
         InfoFileLocks.write_json_file(settings.SITE_INFO_FILE, all_site_info, indent=4)
 
-    def _make_context(self, user, netcdf_form, site_doi_form, doi_formsets, site_id, site_info=None):
+    def _make_context(self, user, is_post, netcdf_form, site_doi_form, doi_formsets, site_id, site_info=None):
         if site_info is None:
             site_info = _get_site_info(site_id)
 
         fixed_fields = netcdf_form.fixed_fields()
         fixed_values = {f: {'value': site_info[f], 'name': self._pretty_name(f)} for f in fixed_fields}
         std_fixed_fields = SiteInfoUpdateForm.fixed_fields()
-        
-        nc_invalid = not netcdf_form.is_valid()
-        sd_invalid = not site_doi_form.is_valid()
-        fs_invalid = not all(fs.is_valid() for fs in doi_formsets.values())
+
+        if is_post:
+            nc_invalid = not netcdf_form.is_valid()
+            sd_invalid = not site_doi_form.is_valid()
+            fs_invalid = not all(fs.is_valid() for fs in doi_formsets.values())
+        else:
+            nc_invalid = False
+            sd_invalid = False
+            fs_invalid = False
 
         context = {
             'netcdf_form': netcdf_form,
