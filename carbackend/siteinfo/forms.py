@@ -344,7 +344,8 @@ class CreatorForm(MetadataAbstractForm):
             'family_name': family_name,
             'given_name': given_name,
             'affiliation': affiliation,
-            'affiliation_id': affiliation_id
+            'affiliation_id': affiliation_id,
+            'is_not_person': is_not_person
         }
 
         if orcid:
