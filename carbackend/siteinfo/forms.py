@@ -291,9 +291,12 @@ class CreatorForm(MetadataAbstractForm):
             'nameIdentifiers': []
         }
         affil_id = data.get('affiliation_id', None)
-        if affil_id:
+        if affil_id and affil_id != 'N/A':
             json_dict['affiliation'][0]['affiliationIdentifier'] = f'https://ror.org/{affil_id}'
-            json_dict['affiliation'][0]['affiliationIdentifierScheme'] = 'ROR' if affil_id != 'N/A' else 'N/A'
+            json_dict['affiliation'][0]['affiliationIdentifierScheme'] = 'ROR'
+        elif affil_id == 'N/A':
+            json_dict['affiliation'][0]['affiliationIdentifier'] = affil_id
+            json_dict['affiliation'][0]['affiliationIdentifierScheme'] = 'N/A'
 
         if data['is_not_person']:
             json_dict['name'] = data['family_name']
@@ -327,7 +330,7 @@ class CreatorForm(MetadataAbstractForm):
         if 'affiliation' in cite_schema_dict:
             affiliation = cite_schema_dict['affiliation'][0]['name']
             affiliation_id = cite_schema_dict['affiliation'][0].get('affiliationIdentifier', 'https://ror.org/')
-            affiliation_id = affiliation_id.split('ror.org/')[1]
+            affiliation_id = affiliation_id.split('ror.org/')[-1]  # Getting the last part should work whether it is N/A or an ror.org URL
         else:
             affiliation = None
             affiliation_id = None
@@ -732,8 +735,12 @@ class CreatorBaseFormset(MetadataBaseFormset):
 
     @classmethod
     def prettify_column_name(cls, colname):
-        if colname.lower() == 'affiliation id':
-            return 'Affiliation ID'
+        if colname.lower() == 'orcid':
+            return 'ORCID'
+        elif colname.lower() == 'is not person':
+            return 'Institution'
+        elif 'id' in colname:
+            return re.sub(r'\bid\b', 'ID', colname)
         else:
             return colname
 
@@ -745,8 +752,12 @@ class ContributorBaseFormset(MetadataBaseFormset):
 
     @classmethod
     def prettify_column_name(cls, colname):
-        if colname.lower() == 'affiliation id':
-            return 'Affiliation ID'
+        if colname.lower() == 'orcid':
+            return 'ORCID'
+        elif colname.lower() == 'is not person':
+            return 'Institution'
+        elif 'id' in colname:
+            return re.sub(r'\bid\b', 'ID', colname)
         else:
             return colname
 

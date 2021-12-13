@@ -27,11 +27,11 @@
     <div class="doi-metadata-section" style="width: 100%; max-width: 100%;">{{ section }}
         <table class="pretty-table" style="width: 100%;">
             <tr>
-                {% for colname in metadata.columns %}<th style="text-align: left;">{{ colname }}</th>{% endfor %}
+                {% for colname in metadata.columns %}<th style="text-align: left; padding: 6px;">{{ colname }}</th>{% endfor %}
             </tr>
             {% for row in metadata.table %}
             <tr>
-                {% for cell in row %}<td>{{ cell }}</td>{% endfor %}
+                {% for cell in row %}<td style="padding: 6px;">{{ cell }}</td>{% endfor %}
             </tr>
             {% endfor %}
         </table>
