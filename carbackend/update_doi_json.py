@@ -17,9 +17,6 @@ def convert_ggg2014_to_ggg2020a(input_file, output_file, indent=None):
     with open(input_file) as f:
         metadata = json.load(f)
 
-    # Geolocation top field name changed
-    metadata['GeoLocation'] = metadata.pop('geoLocations')
-
     # Update GGG version number, assume revision 0
     metadata['titles'][0]['title'] = re.sub(
         r'GGG2014.R\d+',
@@ -48,12 +45,11 @@ def convert_name(name_dict, is_person, category):
         else:
             family, given = [x.strip() for x in name.split(',')]
 
-        name_dict[f'{category}Name'] = f'{family}, {given}'
+        name_dict[f'name'] = f'{family}, {given}'
         name_dict['givenName'] = given
         name_dict['familyName'] = family
     else:
-        name_dict[f'{category}Name'] = name
-
+        name_dict[f'name'] = name
 
 
 if __name__ == '__main__':

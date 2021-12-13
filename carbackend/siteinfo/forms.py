@@ -192,12 +192,12 @@ class SiteDoiForm(forms.Form):
         if self.cleaned_data.get('location_place') is not None:
             geo_data['geoLocationPlace'] = self.cleaned_data['location_place']
 
-        doi_metadata['GeoLocation'] = [geo_data]
+        doi_metadata['geoLocations'] = [geo_data]
 
     @classmethod
     def json_to_dict(cls, doi_metadata):
         title = doi_metadata['titles'][0]['title']
-        geo_data = doi_metadata['GeoLocation'][0]
+        geo_data = doi_metadata['geoLocations'][0]
         return {
             'site': re.search(r'TCCON data from (.+), Release GGG2020', title).group(1),
             'location_place': geo_data.get('geoLocationPlace', None),
@@ -281,9 +281,9 @@ class CreatorForm(MetadataAbstractForm):
         }
 
         if data['is_not_person']:
-            json_dict['creatorName'] = data['family_name']
+            json_dict['name'] = data['family_name']
         else:
-            json_dict['creatorName'] = f'{data["family_name"]}, {data["given_name"]}'
+            json_dict['name'] = f'{data["family_name"]}, {data["given_name"]}'
             json_dict['givenName'] = data['given_name']
             json_dict['familyName'] = data['family_name']
 
@@ -303,7 +303,7 @@ class CreatorForm(MetadataAbstractForm):
     def cite_schema_to_dict(cls, cite_schema_dict):
         is_not_person = 'givenName' not in cite_schema_dict
         if is_not_person:
-            family_name = cite_schema_dict['creatorName']
+            family_name = cite_schema_dict['name']
             given_name = None
         else:
             family_name = cite_schema_dict['familyName']
@@ -411,13 +411,11 @@ class ContributorForm(CreatorForm):
 
     def to_dict(self):
         json_dict = super().to_dict()
-        json_dict['contributorName'] = json_dict.pop('creatorName')
         json_dict['contributorType'] = self.cleaned_data['contributor_type']
         return json_dict
 
     @classmethod
     def cite_schema_to_dict(cls, cite_schema_dict):
-        cite_schema_dict['creatorName'] = cite_schema_dict.pop('contributorName')
         form_dict = super().cite_schema_to_dict(cite_schema_dict)
         form_dict['contributor_type'] = cite_schema_dict['contributorType']
         return form_dict
