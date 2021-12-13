@@ -310,8 +310,20 @@
                     <span class="tooltiptext">{{ form.affiliation.help_text }}</span></span>
                     {% endif %}
                 </th>
-                <td colspan="5">{{form.affiliation}}
+                <td colspan="3">{{form.affiliation}}
                     {% for err in form.affiliation.errors %}
+                    <p class="form-error-box">{{ err }}</p>
+                    {% endfor %}
+                </td>
+
+                <th>{{form.affiliation_id.label}}
+                    {% if form.affiliation_id.help_text %}
+                    <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                    <span class="tooltiptext">{{ form.affiliation_id.help_text }}</span></span>
+                    {% endif %}
+                </th>
+                <td>{{form.affiliation_id}}
+                    {% for err in form.affiliation_id.errors %}
                     <p class="form-error-box">{{ err }}</p>
                     {% endfor %}
                 </td>
@@ -377,18 +389,6 @@
                     <p class="form-error-box">{{ err }}</p>
                     {% endfor %}
                 </td>
-
-                <th>{{form.orcid.label}}
-                    {% if form.orcid.help_text %}
-                    <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
-                    <span class="tooltiptext">{{ form.orcid.help_text }}</span></span>
-                    {% endif %}
-                </th>
-                <td>{{form.orcid}}
-                    {% for err in form.orcid.errors %}
-                    <p class="form-error-box">{{ err }}</p>
-                    {% endfor %}
-                </td>
             </tr>
 
             <tr>
@@ -414,14 +414,14 @@
                 </th>
                 <td>{{form.is_not_person}}</td>
 
-                <th>{{form.affiliation.label}}
-                    {% if form.affiliation.help_text %}
+                <th>{{form.orcid.label}}
+                    {% if form.orcid.help_text %}
                     <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
-                    <span class="tooltiptext">{{ form.affiliation.help_text }}</span></span>
+                    <span class="tooltiptext">{{ form.orcid.help_text }}</span></span>
                     {% endif %}
                 </th>
-                <td colspan="3">{{form.affiliation}}
-                    {% for err in form.affiliation.errors %}
+                <td>{{form.orcid}}
+                    {% for err in form.orcid.errors %}
                     <p class="form-error-box">{{ err }}</p>
                     {% endfor %}
                 </td>
@@ -434,6 +434,33 @@
                 </th>
                 <td>{{form.researcher_id}}
                     {% for err in form.researcher_id.errors %}
+                    <p class="form-error-box">{{ err }}</p>
+                    {% endfor %}
+                </td>
+            </tr>
+
+            <tr>
+                <td></td>
+                <th>{{form.affiliation.label}}
+                    {% if form.affiliation.help_text %}
+                    <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                    <span class="tooltiptext">{{ form.affiliation.help_text }}</span></span>
+                    {% endif %}
+                </th>
+                <td colspan="3">{{form.affiliation}}
+                    {% for err in form.affiliation.errors %}
+                    <p class="form-error-box">{{ err }}</p>
+                    {% endfor %}
+                </td>
+
+                <th>{{form.affiliation_id.label}}
+                    {% if form.affiliation_id.help_text %}
+                    <span class="tooltip midline"><img src="{% static 'img/help-icon.svg' %}" class="line-img">
+                    <span class="tooltiptext">{{ form.affiliation_id.help_text }}</span></span>
+                    {% endif %}
+                </th>
+                <td>{{form.affiliation_id}}
+                    {% for err in form.affiliation_id.errors %}
                     <p class="form-error-box">{{ err }}</p>
                     {% endfor %}
                 </td>

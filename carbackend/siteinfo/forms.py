@@ -10,6 +10,7 @@ from . import utils
 from datetime import datetime
 import os
 import re
+import requests
 _this_year = datetime.today().year
 _base_field_width = '98%'
 
@@ -236,9 +237,19 @@ class CreatorForm(MetadataAbstractForm):
 
     affiliation = forms.CharField(
         label='Affiliation',
-        widget=forms.TextInput(attrs={
+        widget=forms.Textarea(attrs={
             'placeholder': 'Enter affiliation (e.g. institute, city, [state], country) here',
-            'style': f'width:{_base_field_width};'
+            'style': f'width:{_base_field_width}; height:3rem;'
+        })
+    )
+
+    affiliation_id = forms.CharField(
+        required=False, # required in certain circumstances, handled in `clean()`
+        label='Affiliation identifier',
+        help_text='An identifier from ror.org, the part of the URL after ror.org/. E.g. if you look up Caltech, the URL is https://ror.org/05dxps055, so enter 05dxps055. If you cannot find the institution on ror.org, enter N/A',
+        widget=forms.TextInput(attrs={
+            'placeholder': 'ID from ror.org (e.g 05dxps055)',
+            'style': f'width:{_base_field_width}'
         })
     )
 
@@ -279,6 +290,10 @@ class CreatorForm(MetadataAbstractForm):
             'affiliation': [{'name': data['affiliation']}],
             'nameIdentifiers': []
         }
+        affil_id = data.get('affiliation_id', None)
+        if affil_id:
+            json_dict['affiliation'][0]['affiliationIdentifier'] = f'https://ror.org/{affil_id}'
+            json_dict['affiliation'][0]['affiliationIdentifierScheme'] = 'ROR' if affil_id != 'N/A' else 'N/A'
 
         if data['is_not_person']:
             json_dict['name'] = data['family_name']
@@ -309,7 +324,13 @@ class CreatorForm(MetadataAbstractForm):
             family_name = cite_schema_dict['familyName']
             given_name = cite_schema_dict['givenName']
 
-        affiliation = cite_schema_dict['affiliation'][0]['name'] if 'affiliation' in cite_schema_dict else None
+        if 'affiliation' in cite_schema_dict:
+            affiliation = cite_schema_dict['affiliation'][0]['name']
+            affiliation_id = cite_schema_dict['affiliation'][0].get('affiliationIdentifier', 'https://ror.org/')
+            affiliation_id = affiliation_id.split('ror.org/')[1]
+        else:
+            affiliation = None
+            affiliation_id = None
         orcid = None
         researcher_id = None
 
@@ -322,7 +343,8 @@ class CreatorForm(MetadataAbstractForm):
         form_dict = {
             'family_name': family_name,
             'given_name': given_name,
-            'affiliation': affiliation
+            'affiliation': affiliation,
+            'affiliation_id': affiliation_id
         }
 
         if orcid:
@@ -339,6 +361,20 @@ class CreatorForm(MetadataAbstractForm):
         # we have to both set a default value of False *and* remove the error it created.
         cleaned_data.setdefault('is_not_person', False)
         self.errors.pop('is_not_person', None)
+
+        affil = cleaned_data.get('affiliation', '')
+        affil_id = cleaned_data.get('affiliation_id', '')
+        # Now check the affiliation ID. If *either* an affiliation is provided or this is an institution of some sort,
+        # there must be an affiliation ID. If it's not N/A, we check it against ror.org.
+        if cleaned_data['is_not_person'] or affil:
+            if not affil_id:
+                self.add_error('affiliation_id', 'Required if "Institution/group" checked or affiliation provided.')
+            elif affil_id.lower() not in {'na', 'n/a'}:
+                r = requests.get(f'https://api.ror.org/organizations/{affil_id}')
+                if not r.ok:
+                    self.add_error('affiliation_id', 'Could not find this ID on ror.org.')
+            else:
+                cleaned_data['affiliation_id'] = 'N/A'  # ensure a standard value
         return cleaned_data
 
 
@@ -349,9 +385,9 @@ class ContributorForm(CreatorForm):
     affiliation = forms.CharField(
         label='Affiliation',
         required=False,
-        widget=forms.TextInput(attrs={
+        widget=forms.Textarea(attrs={
             'placeholder': 'Enter affiliation (e.g. institute, city, [state], country) here',
-            'style': f'width:{_base_field_width};'
+            'style': f'width:{_base_field_width}; height: 3rem;'
         })
     )
 
@@ -693,11 +729,25 @@ class CreatorBaseFormset(MetadataBaseFormset):
     cls_key = 'creators'
     cls_form = CreatorForm
 
+    @classmethod
+    def prettify_column_name(cls, colname):
+        if colname.lower() == 'affiliation id':
+            return 'Affiliation ID'
+        else:
+            return colname
+
 
 class ContributorBaseFormset(MetadataBaseFormset):
     cls_prefix = 'contributorsForm'
     cls_key = 'contributors'
     cls_form = ContributorForm
+
+    @classmethod
+    def prettify_column_name(cls, colname):
+        if colname.lower() == 'affiliation id':
+            return 'Affiliation ID'
+        else:
+            return colname
 
 
 class RelatedIdentifierBaseFormset(MetadataBaseFormset):
