@@ -7,6 +7,7 @@ from django.shortcuts import render, reverse, HttpResponseRedirect
 
 from datetime import datetime as dt
 import json
+from pathlib import Path
 import re
 
 from .forms import SiteInfoUpdateForm, SiteInfoUpdateStaffForm, ReleaseFlagUpdateForm
@@ -116,6 +117,10 @@ class ViewSiteInfo(View):
 
         tables = dict()
         for key, klass in formset_classes.items():
+            if len(metadata_info) == 0:
+                tables[key] = None
+                continue
+
             if key == 'Site location':
                 loc_info = forms.SiteDoiForm.json_to_dict(metadata_info)
                 info_list = [loc_info] if len(loc_info) > 0 else []
@@ -123,6 +128,7 @@ class ViewSiteInfo(View):
                 info_list = klass.cite_schema_to_list(metadata_info)
 
             if len(info_list) == 0:
+                tables[key] = None
                 continue
 
             columns = list(info_list[0].keys())
@@ -140,13 +146,8 @@ class ViewSiteInfo(View):
 
 class EditSiteInfo(View):
     # TODOs:
-    #   - Actually submit the form (need to add form tags), validate the data, update the json, and update the database
-    #   - Add an edit button to the view page if the user has that permission
     #   - Replace the Http404 error below with a redirect to a "You don't have that permission" page
-    #   - Have confirmation page after saving changes (maybe redirect to the view page?)
     #   - Might also be nice if going back to main without saving put a message "Changes not saved" at the top
-    #   - Add a column to the front page to view the release flags as well.
-    #       * Don't know if those should be editable, maybe only by admins?
     def get(self, request, site_id):
         user = request.user
         if not _can_edit_site(user, site_id):
@@ -167,13 +168,15 @@ class EditSiteInfo(View):
             site_doi_form=site_doi_form,
             doi_formsets=doi_formsets,
             site_id=site_id,
-            site_info=site_info
+            site_info=site_info,
         )
         return render(request, 'siteinfo/edit_site_info.html', context=context)
 
     def post(self, request, site_id):
         # TODO: confirm before deleting a filled form (JS)?
-        # TODO: add in help hover marks?
+        if not _can_edit_site(request.user, site_id):
+            return _redirect_for_lack_of_permission(request, site_id, 'public metadata')
+
         netcdf_form = self._get_netcdf_form(request.user, site_id, post_data=request.POST)
         site_doi_form = self._get_site_doi_form(request.user, site_id, post_data=request.POST)
         doi_formsets = self._make_doi_formset_dict(request, site_id, with_post=True)
@@ -300,9 +303,12 @@ class EditSiteInfo(View):
         utils.backup_file_rolling(settings.SITE_INFO_FILE)
         InfoFileLocks.write_json_file(settings.SITE_INFO_FILE, all_site_info, indent=4)
 
-    def _make_context(self, user, is_post, netcdf_form, site_doi_form, doi_formsets, site_id, site_info=None):
+    def _make_context(self, user, is_post, netcdf_form, site_doi_form, doi_formsets, site_id, site_info=None, ror_list=None):
         if site_info is None:
             site_info = _get_site_info(site_id)
+
+        if ror_list is None:
+            ror_list = self._make_ror_list()
 
         fixed_fields = netcdf_form.fixed_fields()
         fixed_values = {f: {'value': site_info[f], 'name': self._pretty_name(f)} for f in fixed_fields}
@@ -326,13 +332,27 @@ class EditSiteInfo(View):
             'site_id': site_id,
             'contact': utils.get_contact(),
             'can_edit_all': _can_edit_all_site_info(user, site_id),
-            'forms_invalid': {'any': nc_invalid or sd_invalid or fs_invalid, 'common': nc_invalid, 'doi': sd_invalid or fs_invalid}
+            'forms_invalid': {'any': nc_invalid or sd_invalid or fs_invalid, 'common': nc_invalid, 'doi': sd_invalid or fs_invalid},
+            'common_ror_list': ror_list
         }
 
         # Add all the extra DOI formsets directly into the context dictionary
         for key, formset in doi_formsets.items():
             context[f'{key}_formset'] = formset
         return context
+
+    def _make_ror_list(self):
+        ror_file = Path(__file__).parent / 'ror_id_list.txt'
+        ror_list = []
+        with open(ror_file) as f:
+            for line in f:
+                if line.startswith('#'):
+                    continue
+
+                affil, aid = line.split(':', maxsplit=1)
+                ror_list.append((affil, aid))
+
+        return ror_list
 
     @staticmethod
     def _pretty_name(field):

@@ -180,7 +180,13 @@
         <br>
 
         <h2>DOI metadata</h2>
-        <p>The metadata below is only contained in the DOI record for your site.</p>
+        <p>The metadata below is only contained in the DOI record for your site. Hover over the blue question mark icons for help on the different fields. Here are common ROR IDs you might need:</p>
+
+        <ul>
+            {% for affil, aid in common_ror_list %}
+            <li>{{ affil }}: {{ aid }}
+            {% endfor %}
+        </ul>
 
         <div class="doi-metadata-section">Site description
             <table class="pretty-table form-table">

@@ -1,0 +1,5 @@
+# This file lists common ROR affiliation IDs that TCCON members
+# might need. Each line must be the affiliation name followed by
+# a colon, then the ID. Lines starting with # are ignored.
+# Editing this file does NOT require restarting the Django service.
+Caltech: 05dxps055

@@ -62,7 +62,7 @@ elif VM == Vms.TCCONDATA:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['parkfalls.gps.caltech.edu', '131.215.65.68']
+ALLOWED_HOSTS = ['parkfalls.gps.caltech.edu', '131.215.65.68', 'tccondata.gps.caltech.edu', 'tccondata.org']
 
 
 # Enable/disable parts of the application depending on which VM
@@ -223,6 +223,8 @@ CACHES = {
 
 CSRF_COOKIE_SECURE = True  # set to False if HTTPS not enabled and need to test login
 SESSION_COOKIE_SECURE = True  # set to False if HTTPS not enabled and need to test login
+#CSRF_COOKIE_SECURE = False  # set to False if HTTPS not enabled and need to test login
+#SESSION_COOKIE_SECURE = False  # set to False if HTTPS not enabled and need to test login
 # This makes sure the password reset goes to the right place and the login page as well
 if VM == Vms.PARKFALLS:
     LOGIN_URL = '/car/accounts/login/'

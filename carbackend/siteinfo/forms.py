@@ -236,7 +236,8 @@ class CreatorForm(MetadataAbstractForm):
     )
 
     affiliation = forms.CharField(
-        label='Affiliation',
+        label='Affiliation (optional)',
+        required=False,
         widget=forms.Textarea(attrs={
             'placeholder': 'Enter affiliation (e.g. institute, city, [state], country) here',
             'style': f'width:{_base_field_width}; height:3rem;'
@@ -372,7 +373,7 @@ class CreatorForm(MetadataAbstractForm):
         # there must be an affiliation ID. If it's not N/A, we check it against ror.org.
         if cleaned_data['is_not_person'] or affil:
             if not affil_id:
-                self.add_error('affiliation_id', 'Required if "Institution/group" checked or affiliation provided.')
+                self.add_error('affiliation_id', 'Required if "Institution/group" checked or affiliation provided. Use N/A if no affiliation ID exists.')
             elif affil_id.lower() not in {'na', 'n/a'}:
                 r = requests.get(f'https://api.ror.org/organizations/{affil_id}')
                 if not r.ok:
@@ -387,7 +388,7 @@ class ContributorForm(CreatorForm):
     # Also given name and affiliation are not required
 
     affiliation = forms.CharField(
-        label='Affiliation',
+        label='Affiliation (optional)',
         required=False,
         widget=forms.Textarea(attrs={
             'placeholder': 'Enter affiliation (e.g. institute, city, [state], country) here',

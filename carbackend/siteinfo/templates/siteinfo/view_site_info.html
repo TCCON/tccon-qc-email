@@ -25,6 +25,7 @@
 
     {% for section, metadata in doi_tables.items %}
     <div class="doi-metadata-section" style="width: 100%; max-width: 100%;">{{ section }}
+        {% if metadata %}
         <table class="pretty-table" style="width: 100%;">
             <tr>
                 {% for colname in metadata.columns %}<th style="text-align: left; padding: 6px;">{{ colname }}</th>{% endfor %}
@@ -35,6 +36,9 @@
             </tr>
             {% endfor %}
         </table>
+        {% else %}
+            <p>No {{ section }} metadata defined! If you are responsible for this site, go to the edit link below to update this site's information.</p>
+        {% endif %}
     </div>
     {% endfor %}
 
