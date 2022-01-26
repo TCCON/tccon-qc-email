@@ -84,6 +84,7 @@ if ENABLE_SITE_STATUS:
     INSTALLED_APPS.append('opstat.apps.OpstatConfig')
 if ENABLE_SITE_METADATA:
     INSTALLED_APPS.append('siteinfo.apps.SiteinfoConfig')
+    INSTALLED_APPS.append('qcform.apps.QcformConfig')
 
 INSTALLED_APPS.extend([
     'tcconauth.apps.TcconAuthConfig',

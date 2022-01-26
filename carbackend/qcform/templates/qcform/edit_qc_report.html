@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+
+    <!-- Fengyuan Chen's Datepicker -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/datepicker/0.6.5/datepicker.min.css" integrity="sha256-b88RdwbRJEzRx95nCuuva+hO5ExvXXnpX+78h8DjyOE=" crossorigin="anonymous" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datepicker/0.6.5/datepicker.min.js" integrity="sha256-/7FLTdzP6CfC1VBAj/rsp3Rinuuu9leMRGd354hvk0k=" crossorigin="anonymous"></script>
+
+    <style>
+        .flex-container {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+        }
+
+        .form-el {
+            margin: 16px;
+        }
+    </style>
+
+    <style>
+        .question-grid {
+            display: grid;
+            grid-template-rows: auto auto;
+            grid-auto-flow: column;
+            margin: 1rem;
+        }
+
+        .date-grid-cell {
+            grid-area: span 2 / span 1;
+        }
+    </style>
+</head>
+</head>
+<body>
+    <div class="question-grid">
+        <div>One</div>
+        <div>Two</div>
+        <div>Three</div>
+    </div>
+  <form>
+      {% for sectname, sectquestions in qcform.sections %}
+      <h2>{{ sectname }}</h2>
+        {% for question in sectquestions %}
+            <div class="question-grid">
+                <div>
+                    {% for field in question.mcs %}
+                    <p>{{ field.label }}: {{ field }}</p>
+                    {% endfor %}
+                </div>
+
+                {% for field in question.cmts %}
+                <div>{{field.label}}: {{field}}</div>
+                {% endfor %}
+
+                {% if question.whens %}
+                <div class="date-grid-cell"><table>
+                    <tr><th>Period</th><th>Start</th><th>End</th></tr>
+                    {% for period in question.whens %}
+                    <tr><td>{{ forloop.counter }}</td><td>{{ period.0 }}</td><td>{{ period.1 }}</td></tr>
+                    {% endfor %}
+                </table></div>
+                {% endif %}
+
+
+            </div>
+
+
+            {% if question.whens %}
+
+            {% endif %}
+        {% endfor %}
+      {% endfor %}
+  </form>
+</body>
+</html>
