@@ -6,11 +6,12 @@
 </head>
 <body>
   <table>
-    <tr><th></th><th>Site</th><th>netCDF files</th></tr>
+    <tr><th></th><th>Actions</th><th>Site</th><th>netCDF files</th></tr>
     <tr><td><a href="{% url 'qcform:edit' %}">New form</a></td><td></td><td></td></tr>
     {% for row in form_table %}
     <tr>
       <td><a href="{% url 'qcform:edit' row.id %}">Edit</a></td>
+      <td><a href="{% url 'qcform:pdf' row.id %}">Get PDF</a></td>
       <td>{{ row.site }}</td>
       <td>{{ row.nc_files }}</td>
     </tr>

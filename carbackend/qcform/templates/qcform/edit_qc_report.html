@@ -44,34 +44,42 @@
   <form action="{% url 'qcform:edit' %}" method="post">
       {% csrf_token %}
       <input type="hidden" id="form_id" name="form_id" value="{{ form_id }}">
-      {% for sectname, sectquestions in qcform.sections %}
-      <h2>{{ sectname }}</h2>
-        {% for question in sectquestions %}
-            <div class="question-grid">
+      <h2>Preface</h2>
+      {% for preface in qcform.preface %}
+          <table>
+              {% for question in preface.questions %}
+              {% for field in question.mcs %}
+              <tr><th>{{ field.label }}:</th><td>{{ field }}</td></tr>
+              {% endfor %}
+              {% endfor %}
+          </table>
+      {% endfor %}
+
+      {% for section in qcform.sections_no_preface %}
+      <h2>{{ section.name }}</h2>
+        {{ section.intro }}
+        {% for question in section.questions %}
+            <div>
+                <h3>{{ question.title }}</h3>
+                <p>{{ question.message }}</p>
+                {% for field in question.mcs %}
                 <div>
-                    {% for field in question.mcs %}
                     <p>{{ field.label }}: {{ field }}</p>
-                    {% endfor %}
                 </div>
+                {% endfor %}
+
+                {% if question.whens %}
+                <div><table>
+                    <tr><th>Period</th>{% for period in question.whens %}<td>{{ forloop.counter }}</td>{% endfor %}</tr>
+                    <tr><th>Start</th>{% for period in question.whens %}<td>{{ period.0 }}</td>{% endfor %}</tr>
+                    <tr><th>End</th>{% for period in question.whens %}<td>{{ period.1 }}</td>{% endfor %}</tr>
+                </table></div>
+                {% endif %}
 
                 {% for field in question.cmts %}
                 <div>{{field.label}}: {{field}}</div>
                 {% endfor %}
-
-                {% if question.whens %}
-                <div class="date-grid-cell"><table>
-                    <tr><th>Period</th><th>Start</th><th>End</th></tr>
-                    {% for period in question.whens %}
-                    <tr><td>{{ forloop.counter }}</td><td>{{ period.0 }}</td><td>{{ period.1 }}</td></tr>
-                    {% endfor %}
-                </table></div>
-                {% endif %}
             </div>
-
-
-            {% if question.whens %}
-
-            {% endif %}
         {% endfor %}
       {% endfor %}
 
