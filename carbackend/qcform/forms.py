@@ -13,14 +13,22 @@ class QcReportForm(ModelForm):
     class Meta:
         model = QCReport
         fields = '__all__'
-        widgets = {
-            'timing_when1s': DatePickerWidget(),
-            'timing_when1e': DatePickerWidget(),
-        }
+        widgets = dict()
+
+        # Don't know if this is kosher, but it seems to work (as in
+        # automatically makes all "*whenN{s,e}" fields date pickers)
+        for field in QCReport._meta.get_fields():
+            key = field.name
+            if key not in widgets and re.search(r'when[0-9]+[se]$', key):
+                widgets[key] = DatePickerWidget()
+
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     self.fields['reviewer'].disabled = True
 
     def sections(self):
         return [
-            ('Preface', list(self._iter_fields_by_key('reviewer', 'site', 'netcdf_files'))),
+            ('Preface', self._make_section('reviewer', 'site', 'netcdf_files')),
             ('Critical quality checks', self._make_section('timing_', 'pres_err_', 'nans_', 'qc_flags_', 'rolling_xluft_')),
             ('Informational quality checks', self._make_section('lse_', 'sg_', 'nonlin_')),
             ('Additional comments', self._make_section('additional_'))

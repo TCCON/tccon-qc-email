@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+  <table>
+    <tr><th></th><th>Site</th><th>netCDF files</th></tr>
+    <tr><td><a href="{% url 'qcform:edit' %}">New form</a></td><td></td><td></td></tr>
+    {% for row in form_table %}
+    <tr>
+      <td><a href="{% url 'qcform:edit' row.id %}">Edit</a></td>
+      <td>{{ row.site }}</td>
+      <td>{{ row.nc_files }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</body>
+</html>

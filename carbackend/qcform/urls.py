@@ -3,6 +3,7 @@ from . import views
 
 app_name = 'qcform'
 urlpatterns = [
-    # path('', views.SiteInfoList.as_view(), name='index'),
+    path('', views.FormListView.as_view(), name='index'),
     path('edit/', views.EditQcFormView.as_view(), name='edit'),
+    path('edit/<int:form_id>/', views.EditQcFormView.as_view(), name='edit'),
 ]

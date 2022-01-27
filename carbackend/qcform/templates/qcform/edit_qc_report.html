@@ -38,12 +38,12 @@
 </head>
 </head>
 <body>
-    <div class="question-grid">
-        <div>One</div>
-        <div>Two</div>
-        <div>Three</div>
-    </div>
-  <form>
+
+  {{ qcform.debug }}
+
+  <form action="{% url 'qcform:edit' %}" method="post">
+      {% csrf_token %}
+      <input type="hidden" id="form_id" name="form_id" value="{{ form_id }}">
       {% for sectname, sectquestions in qcform.sections %}
       <h2>{{ sectname }}</h2>
         {% for question in sectquestions %}
@@ -66,8 +66,6 @@
                     {% endfor %}
                 </table></div>
                 {% endif %}
-
-
             </div>
 
 
@@ -76,6 +74,8 @@
             {% endif %}
         {% endfor %}
       {% endfor %}
+
+      <button type="submit">Save form</button>
   </form>
 </body>
 </html>
