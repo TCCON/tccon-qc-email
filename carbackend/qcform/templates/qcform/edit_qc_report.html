@@ -38,8 +38,22 @@
 </head>
 </head>
 <body>
+    {% if qcform.non_field_errors %}
+    <p>The following general errors must be corrected:</p>
+    <!-- Not sure what this looks like, don't have any non-field errors currently -->
+    {{ qcform.non_field_errors }}
+    {% endif %}
 
-  {{ qcform.debug }}
+  {% if qcform.errors %}
+  <p>One or more fields have errors:</p>
+  <ul>
+    {% for key, err_list in qcform.errors.items %}
+      {% for err in err_list %}
+        <li><a href="#id_{{key}}">{{ err }}</a> </li>
+      {% endfor %}
+    {% endfor %}
+  </ul>
+  {% endif %}
 
   <form action="{% url 'qcform:edit' %}" method="post">
       {% csrf_token %}
@@ -49,7 +63,25 @@
           <table>
               {% for question in preface.questions %}
               {% for field in question.mcs %}
-              <tr><th>{{ field.label }}:</th><td>{{ field }}</td></tr>
+              <tr>
+                  <th>{{ field.label }}:</th>
+                  {% if field.name == "reviewer" %}
+                  <td>{{ field.value }}</td>
+                  <input type="hidden" id="id_reviewer" name="reviewer" value="{{ field.value }}">
+                  {% else %}
+                  <td>
+                      {{ field }}
+                      {% if field.errors %}
+                      <p>ERROR:</p>
+                      <ul>
+                        {% for err in field.errors %}
+                        <li>{{ err }}</li>
+                        {% endfor %}
+                      </ul>
+                      {% endif %}
+                  </td>
+                  {% endif %}
+              </tr>
               {% endfor %}
               {% endfor %}
           </table>
@@ -65,22 +97,112 @@
                 {% for field in question.mcs %}
                 <div>
                     <p>{{ field.label }}: {{ field }}</p>
+                    {% if field.errors %}
+                      <p>ERROR:</p>
+                      <ul>
+                        {% for err in field.errors %}
+                        <li>{{ err }}</li>
+                        {% endfor %}
+                      </ul>
+                    {% endif %}
                 </div>
                 {% endfor %}
 
+                <!-- Date range or individual dates section. Table is:
+                Period                    | 1    | 2    | 3    | ...
+                Approx. start/Approx date | s1   | s2   | s3   | ...
+                                          | errs | errs | errs | ...
+                Approx. end               | e1   | e2   | e3   | ...
+                                          | errs | errs | errs | ...
+                -->
                 {% if question.whens %}
-                <div id="whens_{{question.title}}"><table>
-                    <tr><th>Period</th>{% for period in question.whens %}<td>{{ forloop.counter }}</td>{% endfor %}</tr>
-                    <tr><th>{% if question.whens_type == 'paired' %} Approx. start {% else %} Approx. date {% endif %}</th>
-                        {% for period in question.whens %}<td>{{ period.0 }}</td>{% endfor %}</tr>
+                <div><table>
+                    <tr>
+                        <th>Period</th>
+                        {% for period in question.whens %}
+                            <td>{{ forloop.counter }}</td>
+                        {% endfor %}
+                    </tr>
+
                     {% if question.whens_type == 'paired' %}
-                    <tr><th>Approx. end</th>{% for period in question.whens %}<td>{{ period.1 }}</td>{% endfor %}</tr>
+                        <tr>
+                            <th>Approx. start</th>
+                            {% for period in question.whens %}
+                                <td>
+                                    {{ period.0 }}
+                                </td>
+                            {% endfor %}
+                        </tr>
+
+                        <tr>
+                            <th></th>
+                            {% for period in question.whens %}
+                                <td>
+                                    {% for err in period.0.errors %}
+                                    <p>ERROR: {{ err }}</p>
+                                    {% endfor %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+
+                        <tr>
+                            <th>Approx. end</th>
+                            {% for period in question.whens %}
+                                <td>
+                                    {{ period.1 }}
+                                </td>
+                            {% endfor %}
+                        </tr>
+
+                        <tr>
+                            <th></th>
+                            {% for period in question.whens %}
+                                <td>
+                                    {% for err in period.1.errors %}
+                                    <p>ERROR: {{ err }}</p>
+                                    {% endfor %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <th>Approx. date</th>
+                            {% for period in question.whens %}
+                            <td>
+                                {{ period.0 }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+
+                        <tr>
+                            <th></th>
+                            {% for period in question.whens %}
+                            <td>
+                                {% for err in period.0.errors %}
+                                    <p>ERROR: {{ err }}</p>
+                                {% endfor %}
+                            </td>
+                            {% endfor %}
+                        </tr>
                     {% endif %}
                 </table></div>
                 {% endif %}
 
+                <!-- End time periods table-->
+
                 {% for field in question.cmts %}
-                <div id="cmts_{{question.title}}">{{field.label}}: {{field}}</div>
+                <div>
+                    {{field.label}}: {{field}}
+
+                    {% if field.errors %}
+                      <p>ERROR:</p>
+                      <ul>
+                        {% for err in field.errors %}
+                        <li>{{ err }}</li>
+                        {% endfor %}
+                      </ul>
+                      {% endif %}
+                </div>
                 {% endfor %}
             </div>
         {% endfor %}
@@ -88,5 +210,7 @@
 
       <button type="submit">Save form</button>
   </form>
+
+  <form action="{% url 'qcform:index' %}"><button type="submit">Back to main</button></form>
 </body>
 </html>

@@ -92,11 +92,9 @@ and so do not require reprocessing. If the error is sufficiently large, the data
                     key2 = m.group(1) + 'e'
                     fields['whens'].append((field, self._get_field_by_key(key2)))
                     whens_paired_dates = True
-                    print('paired', key, prefix)
                 else:
                     fields['whens'].append((field, None))
                     whens_single_date = True
-                    print('single', key, prefix)
             elif re.search(r'when[0-9]+e$', key):
                 # We handle the end fields with their paired start fields
                 pass
@@ -109,7 +107,6 @@ and so do not require reprocessing. If the error is sufficiently large, the data
             fields['whens_type'] = 'paired'
         elif whens_single_date:
             fields['whens_type'] = 'single'
-        print(prefix, 'whens_type is', fields['whens_type'], '\n')
         return fields
 
     @classmethod
@@ -136,6 +133,14 @@ class QCReport(models.Model, ISection):
     site = models.CharField(max_length=2, choices=utils.get_sites_as_choices(), verbose_name='Site')
     netcdf_files = models.TextField(verbose_name='NetCDF files')
     modification_time = models.DateTimeField(auto_now=True)
+
+    yes_req_date = {'timing_present': 'timing_when0s',
+                    'pres_err_present': 'pres_err_when0s',
+                    'rolling_xluft_present': 'rolling_xluft_when0s',
+                    'sg_present': 'sg_when0s',
+                    'nonlin_present': 'nonlin_when0s',
+                    'hcl_vsf_unstable': 'hcl_vsf_when0',
+                    'o2_fs_unstable': 'o2_fs_when0'}
 
     timing_title = 'Timing error'
     timing_message = 'Check at least the Xluft PM - AM plot (|∆| < 0.01 ideal) and Xluft vs. SZA plots.'
@@ -372,6 +377,9 @@ O2 CL slope of 0.01, such a slope should be near 0 when no nonlinearity is prese
         # Handle paired date cases (i.e. beginning and ends). If both are None, assume no value given. If
         # one is None, then assume that is an open-ended side to the range. Otherwise, just print the
         # date range.
+        #
+        # NOTE: currently I have form validation set so that a date range *must* be provided (both start and end).
+        # I'm just keeping this in case I want to revert.
         if start is None and end is None:
             return None
 

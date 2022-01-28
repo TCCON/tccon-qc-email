@@ -2,18 +2,57 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>TCCON QA/QC Forms</title>
+  {% load tz %}
 </head>
 <body>
+  {% if user.is_authenticated %}
+  <p>You are logged in as <strong>{{ user.get_username }}</strong>.<br>
+     <a href="{% url 'logout' %}?next={% url 'qcform:index' %}">Log out</a></p>
+  {% else %}
+  <p>You are not logged in.<br>
+     <a href="{% url 'login' %}?next={% url 'qcform:index' %}">Log in.</a></p>
+  {% endif %}
+
+  {% if message %}
+  <div>
+    {% if message == 'success' %}
+    Successfully saved QC form.
+    {% elif message == 'deleted' %}
+    Successfully deleted QC form.
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if is_auth %}
+  <h2>My reports</h2>
   <table>
-    <tr><th></th><th>Actions</th><th>Site</th><th>netCDF files</th></tr>
+    <tr><th colspan="3">Actions</th><th>Reviewer</th><th>Site</th><th>netCDF files</th><th>Last modified</th></tr>
     <tr><td><a href="{% url 'qcform:edit' %}">New form</a></td><td></td><td></td></tr>
-    {% for row in form_table %}
+    {% for row in my_reports %}
     <tr>
       <td><a href="{% url 'qcform:edit' row.id %}">Edit</a></td>
       <td><a href="{% url 'qcform:pdf' row.id %}">Get PDF</a></td>
+      <td><form action="{% url 'qcform:delete' row.id %}" method="post">{% csrf_token %}<button type="submit">Delete</button></form> </td>
+      <td>{{ row.user }}</td>
       <td>{{ row.site }}</td>
       <td>{{ row.nc_files }}</td>
+      <td>{{ row.mod_time }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+
+  <h2>{% if is_auth %}Other reports{% else %}Reports{% endif %}</h2>
+  <table>
+    <tr><th colspan="1">Actions</th><th>Reviewer</th><th>Site</th><th>netCDF files</th><th>Last modified</th></tr>
+    {% for row in other_reports %}
+    <tr>
+      <td><a href="{% url 'qcform:pdf' row.id %}">Get PDF</a></td>
+      <td>{{ row.user }}</td>
+      <td>{{ row.site }}</td>
+      <td>{{ row.nc_files }}</td>
+      <td>{{ row.mod_time }}</td>
     </tr>
     {% endfor %}
   </table>

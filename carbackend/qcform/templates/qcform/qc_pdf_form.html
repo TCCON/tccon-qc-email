@@ -16,7 +16,7 @@
   <p><i>Reviewer</i>: {{ reviewer_user_name }}</p>
   {% endif %}
   <p><i>Site</i>: {{ site }}</p>
-  <p><i>netCDF files</i>: {{ nc_files }}</p>
+  <p><i>netCDF files</i>: {{ report.netcdf_files }}</p>
 
 
 {% for section in report.sections_with_values_no_preface %}

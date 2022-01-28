@@ -1,4 +1,5 @@
-from django.shortcuts import render, Http404, HttpResponse, get_object_or_404
+from django.shortcuts import render, reverse, Http404, HttpResponse, HttpResponseRedirect, get_object_or_404
+from django.contrib.auth.models import User
 from django.template import loader
 from django.views import View
 
@@ -12,10 +13,9 @@ import xhtml2pdf.pisa as pisa
 # Next step: see if I can install a small version of latex on tccondata, make a template that can be filled out for it
 # and write the PDF downloading view. Also need to add errors to the form. That is the minimum functionality.
 # More todos:
-#  TODO: allow deleting forms
 #  TODO: allow uploading existing PDF forms and converting
-#  TODO: validate that at least one date is provided when needed
 #  TODO: give it some style
+#  TODO: make mod times local
 #  TODO: direct to logins if needed.
 
 # https://github.com/vincentdoerig/latex-css
@@ -23,7 +23,7 @@ import xhtml2pdf.pisa as pisa
 # HTML to PDF:
 # https://github.com/xhtml2pdf/xhtml2pdf
 def _string_to_oneline(s, max_length=None):
-    s = re.sub('\r?\n?', ' ', s)
+    s = re.sub('[\r\n]+', ' ', s)
     if max_length is not None and len(s) > max_length:
         return s[:max_length-3] + '...'
     else:
@@ -33,20 +33,41 @@ def _string_to_oneline(s, max_length=None):
 # Create your views here.
 class FormListView(View):
     def get(self, request):
-        if not request.user.is_authenticated:
-            # TODO: redirect to log in page
-            raise Http404('Must be logged in')
+        if request.user.is_authenticated:
+            username = request.user.get_username()
+            print(username)
+            my_reports = QCReport.objects.filter(reviewer=username)
+            other_reports = QCReport.objects.exclude(reviewer=username)
+            print(my_reports)
+            print(other_reports)
+        else:
+            my_reports = None
+            other_reports = QCReport.objects.all()
 
-        my_reports = QCReport.objects.filter(reviewer=request.user.get_username())
+        context = {
+            'user': request.user,
+            'message': request.GET.get('msg', None),
+            'is_auth': request.user.is_authenticated,
+            'my_reports': self._reports_to_table(my_reports),
+            'other_reports': self._reports_to_table(other_reports)
+        }
+
+        return render(request, 'qcform/qcform_list.html', context=context)
+
+    def _reports_to_table(self, reports):
+        if reports is None:
+            return None
+
         table_rows = []
-        for report in my_reports:
+        for report in reports:
             table_rows.append({
                 'id': report.id,
+                'user': report.reviewer,
                 'site': report.site,
-                'nc_files': _string_to_oneline(report.netcdf_files, max_length=32)
+                'nc_files': _string_to_oneline(report.netcdf_files, max_length=32),
+                'mod_time': report.modification_time
             })
-
-        return render(request, 'qcform/qcform_list.html', context={'form_table': table_rows})
+        return  table_rows
 
 
 class EditQcFormView(View):
@@ -70,7 +91,12 @@ class EditQcFormView(View):
             raise Http404('Must be logged in')
 
         # We store the form id in a hidden input, if it is >0 that means we need to update an existing form
-        form_id = int(request.POST.get('form_id', -1))
+        try:
+            form_id = int(request.POST.get('form_id', -1))
+        except ValueError:
+            # should happen with new forms; no existing ID, so the value is an empty string
+            form_id = -1
+
         if form_id > 0:
             existing_report = QCReport.objects.get(id=form_id)
         else:
@@ -78,27 +104,51 @@ class EditQcFormView(View):
         form = QcReportForm(request.POST, instance=existing_report)
 
         if form.is_valid():
+            if form.cleaned_data['reviewer'] != request.user.get_username():
+                # Just a little precaution in case someone tries to mess with their POST data
+                raise ValueError('Form reviewer does not match username')
+
             form.save()
-            return HttpResponse('Success!'.encode('utf8'), content_type='text/plain')
+            url = '{}/?msg=success'.format(reverse('qcform:index').rstrip('?').rstrip('/'))
+            return HttpResponseRedirect(url)
         else:
-            print(form.errors)
-            return render(request, 'qcform/edit_qc_report.html', context={'qcform': form})
+            return render(request, 'qcform/edit_qc_report.html', context={'qcform': form, 'form_id': form_id})
+
+
+class DeleteQcForm(View):
+    def post(self, request, form_id):
+        if not request.user.is_authenticated:
+            raise Http404('Must be logged in')
+
+        report = QCReport.objects.get(id=form_id)
+        if not report.reviewer == request.user.get_username():
+            raise ValueError('Form reviewer does not match username')
+
+        report.delete()
+
+        url = '{}/?msg=deleted'.format(reverse('qcform:index').rstrip('?').rstrip('/'))
+        return HttpResponseRedirect(url)
 
 
 class RenderPdfForm(View):
     def get(self, request, form_id):
         report = get_object_or_404(QCReport, id=form_id)
 
-        if request.user.first_name or request.user.last_name:
-            reviewer_full_name = f'{request.user.first_name} {request.user.last_name}'
-        else:
+        try:
+            reviewer = User.objects.get(username=report.reviewer)
+        except User.DoesNotExist:
             reviewer_full_name = ''
+        else:
+            if reviewer.first_name or reviewer.last_name:
+                reviewer_full_name = f'{reviewer.first_name} {reviewer.last_name}'
+            else:
+                reviewer_full_name = ''
 
         context = {
             'report': report,
             'site': report.get_site_display(),
             'reviewer_full_name': reviewer_full_name,
-            'reviewer_user_name': request.user.get_username(),
+            'reviewer_user_name': report.reviewer,
             'brief': True
         }
 
