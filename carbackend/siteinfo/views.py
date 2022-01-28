@@ -97,6 +97,7 @@ class ViewSiteInfo(View):
 
         context = {
             'site_id': site_id,
+            'is_auth': request.user.is_authenticated,
             'info': site_info,
             'doi_tables': self._metadata_to_tables(metadata_info),
             'can_edit': _can_edit_site(request.user, site_id),
