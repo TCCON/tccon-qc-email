@@ -797,6 +797,9 @@ class TypeRestrictedFileField(FileField):
 
     def clean(self, *args, **kwargs):
         data = super().clean(*args, **kwargs)
+        if data is None:
+            return None
+
         file = data.file
         try:
             content_type = data.content_type

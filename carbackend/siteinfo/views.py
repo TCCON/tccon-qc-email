@@ -388,12 +388,13 @@ class ViewReleaseFlags(View):
             v.setdefault('name', flag_defs[flag_value])
             v.setdefault('comment', '')
 
+            plot = v.get('plot', None)  # handle either missing or null plot
             meta = dict()
             meta['n'] = int(n)
             meta['n_str'] = str(meta['n'])
             meta['start_date'] = dt.strptime(start_str, '%Y%m%d').date()
             meta['end_date'] = dt.strptime(end_str, '%Y%m%d').date()
-            meta['plot_path'] = settings.FLAG_PLOT_URL + v['plot'] if 'plot' in v else None
+            meta['plot_path'] = settings.FLAG_PLOT_URL + plot if plot is not None else None
 
             site_flags.append({'info': v, 'meta': meta})
 
