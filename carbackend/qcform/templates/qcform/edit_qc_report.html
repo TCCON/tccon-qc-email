@@ -69,15 +69,18 @@
                 {% endfor %}
 
                 {% if question.whens %}
-                <div><table>
+                <div id="whens_{{question.title}}"><table>
                     <tr><th>Period</th>{% for period in question.whens %}<td>{{ forloop.counter }}</td>{% endfor %}</tr>
-                    <tr><th>Start</th>{% for period in question.whens %}<td>{{ period.0 }}</td>{% endfor %}</tr>
-                    <tr><th>End</th>{% for period in question.whens %}<td>{{ period.1 }}</td>{% endfor %}</tr>
+                    <tr><th>{% if question.whens_type == 'paired' %} Approx. start {% else %} Approx. date {% endif %}</th>
+                        {% for period in question.whens %}<td>{{ period.0 }}</td>{% endfor %}</tr>
+                    {% if question.whens_type == 'paired' %}
+                    <tr><th>Approx. end</th>{% for period in question.whens %}<td>{{ period.1 }}</td>{% endfor %}</tr>
+                    {% endif %}
                 </table></div>
                 {% endif %}
 
                 {% for field in question.cmts %}
-                <div>{{field.label}}: {{field}}</div>
+                <div id="cmts_{{question.title}}">{{field.label}}: {{field}}</div>
                 {% endfor %}
             </div>
         {% endfor %}
