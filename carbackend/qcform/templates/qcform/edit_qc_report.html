@@ -55,6 +55,8 @@
   </ul>
   {% endif %}
 
+  <p><b>Note:</b>some Unicode characters cannot be stored. If you get a server error when submitting your form, please remove non-ASCII characters.</p>
+
   <form action="{% url 'qcform:edit' %}" method="post">
       {% csrf_token %}
       <input type="hidden" id="form_id" name="form_id" value="{{ form_id }}">
