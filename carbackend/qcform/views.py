@@ -33,13 +33,12 @@ def _string_to_oneline(s, max_length=None):
 # Create your views here.
 class FormListView(View):
     def get(self, request):
+        # The
         if request.user.is_authenticated:
             username = request.user.get_username()
-            print(username)
             my_reports = QCReport.objects.filter(reviewer=username)
             other_reports = QCReport.objects.exclude(reviewer=username)
-            print(my_reports)
-            print(other_reports)
+
         else:
             my_reports = None
             other_reports = QCReport.objects.all()
@@ -65,7 +64,7 @@ class FormListView(View):
                 'user': report.reviewer,
                 'site': report.site,
                 'nc_files': _string_to_oneline(report.netcdf_files, max_length=32),
-                'mod_time': report.modification_time
+                'mod_time': report.modification_time.strftime('%Y-%m-%d %H:%M:%S %Z')
             })
         return  table_rows
 
