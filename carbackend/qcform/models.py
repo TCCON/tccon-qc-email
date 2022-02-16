@@ -130,7 +130,7 @@ class QCReport(models.Model, ISection):
     # I decided against it because I don't want to deal with issues if
     # we remove a user.
     reviewer = models.CharField(max_length=128, verbose_name='Reviewer')
-    site = models.CharField(max_length=2, choices=utils.get_sites_as_choices(), verbose_name='Site')
+    site = models.CharField(max_length=2, choices=utils.get_sites_as_choices(label_fmt='name+id'), verbose_name='Site')
     netcdf_files = models.TextField(verbose_name='NetCDF files')
     modification_time = models.DateTimeField(auto_now=True)
 

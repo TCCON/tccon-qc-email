@@ -4,7 +4,15 @@
     <meta charset="UTF-8">
     <title>TCCON QA/QC Forms</title>
   {% load tz %}
+
+  <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+
+    <!-- Fengyuan Chen's Datepicker -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/datepicker/0.6.5/datepicker.min.css" integrity="sha256-b88RdwbRJEzRx95nCuuva+hO5ExvXXnpX+78h8DjyOE=" crossorigin="anonymous" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datepicker/0.6.5/datepicker.min.js" integrity="sha256-/7FLTdzP6CfC1VBAj/rsp3Rinuuu9leMRGd354hvk0k=" crossorigin="anonymous"></script>
 </head>
+
 <body>
   {% if user.is_authenticated %}
   <p>You are logged in as <strong>{{ user.get_username }}</strong>.<br>
@@ -23,6 +31,24 @@
     {% endif %}
   </div>
   {% endif %}
+
+  <h2>Filter results</h2>
+  {% if is_auth %} <p>Filtering affects both tables of forms (yours and other reviewers), except filtering on reviewer
+  will not affect your table.</p> {% endif %}
+  <form action="{% url 'qcform:index' %}" method="get">
+    {{ filter_form.as_table }}
+
+    <p><button type="submit">Apply filters</button></p>
+  </form>
+
+  <form action="{% url 'qcform:index' %}" method="get">
+    <!--All we need to do to clear the filters is to request the page again without
+        any query parameters, which this does. -->
+    <button type="submit">Clear filters</button>
+  </form>
+
+  <p>You can click on most column headings to sort the table by that column.
+  Clicking again with switch ascending/descending sort.</p>
 
   {% if is_auth %}
   <h2>My reports</h2>

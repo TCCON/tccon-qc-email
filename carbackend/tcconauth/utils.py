@@ -15,6 +15,7 @@ site_id_to_name = {
     "hw": "Harwell",
     "if": "Indianapolis",
     "iz": "Izana",
+    "jc": "JPL",
     "jf": "JPL",
     "js": "Saga",
     "jx": "JPL",
@@ -41,5 +42,16 @@ site_id_to_name = {
 }
 
 
-def get_sites_as_choices():
-    return [t for t in site_id_to_name.items()]
+def get_sites_as_choices(label_fmt='name', include_blank=False):
+    if label_fmt == 'name+id':
+        choices = [(k, '{} ({})'.format(v, k)) for k, v in site_id_to_name.items()]
+    elif label_fmt == 'id':
+        choices = [(k, k) for k in site_id_to_name.keys()]
+    else:
+        choices = [t for t in site_id_to_name.items()]
+
+    if include_blank:
+        choices.insert(0, ('', '-'))
+
+    return choices
+

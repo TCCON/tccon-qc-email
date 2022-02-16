@@ -4,7 +4,7 @@ from django.template import loader
 from django.views import View
 
 from. models import QCReport
-from .forms import QcReportForm
+from .forms import QcReportForm, QcFilterForm
 
 import io
 import re
@@ -34,6 +34,7 @@ def _string_to_oneline(s, max_length=None):
 class FormListView(View):
     def get(self, request):
         # The
+
         if request.user.is_authenticated:
             username = request.user.get_username()
             my_reports = QCReport.objects.filter(reviewer=username)
@@ -43,15 +44,45 @@ class FormListView(View):
             my_reports = None
             other_reports = QCReport.objects.all()
 
+        user_filter = self._build_filter(request)
+        print(user_filter)
+        if user_filter:
+            other_reports = other_reports.filter(**user_filter)
+            if my_reports:
+                # don't filter on reviewer for the users' reports
+                my_rep_filter = {k: v for k, v in user_filter.items() if 'reviewer' not in k}
+                my_reports = my_reports.filter(**my_rep_filter)
+
         context = {
             'user': request.user,
             'message': request.GET.get('msg', None),
             'is_auth': request.user.is_authenticated,
             'my_reports': self._reports_to_table(my_reports),
-            'other_reports': self._reports_to_table(other_reports)
+            'other_reports': self._reports_to_table(other_reports),
+            'filter_form': QcFilterForm(request.GET)
         }
 
         return render(request, 'qcform/qcform_list.html', context=context)
+
+    def _build_filter(self, request):
+        site = request.GET.get('site', '')
+        reviewer = request.GET.get('reviewer', '')
+        min_date = request.GET.get('modified_after', None)
+        max_date = request.GET.get('modified_before', None)
+
+        filter_dict = dict()
+        if site:
+            filter_dict['site'] = site
+        if reviewer:
+            filter_dict['reviewer__icontains'] = reviewer
+        if min_date:
+            min_date = min_date.replace('/', '-') + ' 00:00'
+            filter_dict['modification_time__gte'] = min_date
+        if max_date:
+            max_date = max_date.replace('/', '-') + ' 00:00'
+            filter_dict['modification_time__lte'] = max_date
+
+        return filter_dict
 
     def _reports_to_table(self, reports):
         if reports is None:

@@ -1,5 +1,7 @@
-from django.forms import ModelForm, DateInput, DateField
+from django.forms import Form, ModelForm, DateInput, DateField
+from django import forms
 from .models import QCReport, ISection
+from tcconauth import utils
 
 import copy
 import re
@@ -12,6 +14,13 @@ class DatePickerWidget(DateInput):
 class DatePickerField(DateField):
     def __init__(self, *args, input_formats=('%Y-%m-%d', '%Y/%m/%d'), **kwargs):
         super().__init__(*args, input_formats=input_formats, **kwargs)
+
+
+class QcFilterForm(Form):
+    reviewer = forms.CharField(required=False)
+    site = forms.ChoiceField(required=False, choices=utils.get_sites_as_choices(label_fmt='name+id', include_blank=True))
+    modified_after = DatePickerField(required=False, widget=DatePickerWidget())
+    modified_before = DatePickerField(required=False, widget=DatePickerWidget())
 
 
 class QcReportForm(ModelForm, ISection):
