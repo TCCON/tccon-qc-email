@@ -827,7 +827,7 @@ class ReleaseFlagUpdateForm(Form):
     plot = TypeRestrictedFileField(label='Upload an image of a plot',
                                    required=False,
                                    max_upload_bytes=5*1024**2,  # 5 MB
-                                   content_types=('image/jpg', 'image/png'))
+                                   content_types=('image/jpg', 'image/jpeg', 'image/png'))
 
     def clean(self):
         cleaned_data = super().clean()

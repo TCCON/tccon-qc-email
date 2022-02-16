@@ -31,10 +31,11 @@ class QcReportForm(ModelForm, ISection):
         field_classes = dict()
 
         # Don't know if this is kosher, but it seems to work (as in
-        # automatically makes all "*whenN{s,e}" fields date pickers)
+        # automatically makes all "*whenN{s,e}" or "*whenN" fields 
+        # date pickers)
         for field in QCReport._meta.get_fields():
             key = field.name
-            if key not in widgets and re.search(r'when[0-9]+[se]$', key):
+            if key not in widgets and re.search(r'when[0-9]+[se]?$', key):
                 widgets[key] = DatePickerWidget()
                 field_classes[key] = DatePickerField
 
