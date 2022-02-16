@@ -182,7 +182,6 @@ class RenderPdfForm(View):
             'brief': True
         }
 
-        # This doesn't produce
         template = loader.get_template('qcform/qc_pdf_form.html')
         html = template.render(context, request)
         pdf = io.BytesIO(b'')

@@ -16,7 +16,7 @@
   <p><i>Reviewer</i>: {{ reviewer_user_name }}</p>
   {% endif %}
   <p><i>Site</i>: {{ site }}</p>
-  <p><i>netCDF files</i>: {{ report.netcdf_files }}</p>
+  <p><i>netCDF files</i>: {{ report.netcdf_files | linebreaks }}</p>
 
 
 {% for section in report.sections_with_values_no_preface %}
@@ -42,7 +42,7 @@
         {% for field in question.cmts %}
             {% if field.value %}
                 <p><i>{{ field.label }}</i>:</p>
-                <p>{{ field.value }}</p>
+                <p>{{ field.value | linebreaks }}</p>
             {% else %}
                 <p><i>{{ field.label }}</i>: None</p>
             {% endif %}
