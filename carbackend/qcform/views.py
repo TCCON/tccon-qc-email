@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.template import loader
 from django.views import View
 
-from. models import QCReport
+from. models import QCReport, DraftQcReport
 from .forms import QcReportForm, QcFilterForm
 
 import io
@@ -143,6 +143,26 @@ class EditQcFormView(View):
             return HttpResponseRedirect(url)
         else:
             return render(request, 'qcform/edit_qc_report.html', context={'qcform': form, 'form_id': form_id})
+
+
+class SaveDraftQcFormView(View):
+    # TODO: handle retrieving drafts
+    #     This will need another table on the list page when users are logged in, which is fine.
+    #   The trickier part is how to handle further editing of the draft. The simplest approach is just to delete the
+    #   draft as soon as it is reopened, and only resave it if told to. However, that could lead to unexpected behavior,
+    #   if someone opens a draft, does nothing, then closes down their browser. They'd probably expect the draft to
+    #   still be there.
+    #     That means that we need logic in the editing form to keep track of whether it was a resumed draft, UPDATE the
+    #   draft if a new draft saved (should actually change the button text), and only delete the draft when the final
+    #   form is submitted and *accepted* - also don't want it to be deleted if the form is invalid!
+    def get(self, request):
+        raise Http404('Wrong request type!')
+
+    def post(self, request):
+        new_draft = DraftQcReport.from_post(request)
+        new_draft.save()
+        url = '{}/?msg=draft-success'.format(reverse('qcform:index').rstrip('?').rstrip('/'))
+        return HttpResponseRedirect(url)
 
 
 class DeleteQcForm(View):

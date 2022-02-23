@@ -1,9 +1,10 @@
 from django.db import models
 from django.utils.safestring import mark_safe
+from django.core.serializers.json import DjangoJSONEncoder
 from tcconauth import utils
 
 import re
-
+import json
 
 _choices_yn = [
     ('y', 'Yes'),
@@ -408,3 +409,36 @@ O2 CL slope of 0.01, such a slope should be near 0 when no nonlinearity is prese
                 return field
 
         raise KeyError(key)
+
+
+class DraftQcReport(models.Model):
+    class DraftJSONDecoder(json.JSONDecoder):
+        # TODO: handle converting date strings (for the "when" fields) back into date (datetime?) objects if needed
+        pass
+
+    # This model uses a JSON field to store everything other than the reviewer and modification time because it needs
+    # to mirror the QcReport model. I tried inheriting that model and overriding the fields that were required with
+    # blank-allowed versions, but that wasn't allowed (Django does not allow field names to clash.) Thus the JSON
+    # field, which is a cleaner solution anyway (as it will always be able to store the same fields as the QcReport
+    # model without modifying *this* class).
+    reviewer = models.CharField(max_length=128, verbose_name='Reviewer')
+    modification_time = models.DateTimeField(auto_now=True)
+    draft_data = models.JSONField(encoder=DjangoJSONEncoder, decoder=DraftJSONDecoder)
+
+    @classmethod
+    def from_post(cls, request):
+        if not request.user.is_authenticated:
+            raise RuntimeError('User must be authenticated to make a draft')
+
+        json_data = dict()
+        request_post = request.POST
+        for field in QCReport._meta.get_fields():
+            if field.name in {'id', 'modification_time'}:
+                continue
+            else:
+                json_data[field.name] = request_post.get(field.name, None)
+
+        reviewer = json_data.pop('reviewer', None)
+        if reviewer is None:
+            raise RuntimeError('Draft must be associated with a user')
+        return cls(reviewer=reviewer, draft_data=json_data)

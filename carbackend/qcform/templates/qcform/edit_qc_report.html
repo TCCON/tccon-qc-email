@@ -209,8 +209,9 @@
       {% endfor %}
 
       <button type="submit">Save form</button>
+      <button type="submit" formaction="{% url 'qcform:savedraft' %}" formnovalidate>Save draft</button>
+      <button type="submit" formaction="{% url 'qcform:index' %}" formmethod="get">Back to main</button>
   </form>
 
-  <form action="{% url 'qcform:index' %}"><button type="submit">Back to main</button></form>
 </body>
 </html>
