@@ -58,6 +58,7 @@
   <form action="{% url 'qcform:edit' %}" method="post">
       {% csrf_token %}
       <input type="hidden" id="form_id" name="form_id" value="{{ form_id }}">
+      <input type="hidden" id="draft_id" name="draft_id" value="{{ draft_id }}">
       <h2>Preface</h2>
       {% for preface in qcform.preface %}
           <table>
@@ -209,7 +210,9 @@
       {% endfor %}
 
       <button type="submit">Save form</button>
-      <button type="submit" formaction="{% url 'qcform:savedraft' %}" formnovalidate>Save draft</button>
+      <button type="submit" formaction="{% url 'qcform:savedraft' %}" formnovalidate>
+          {% if has_draft %} Update draft {% else %} Save draft {% endif %}
+      </button>
       <button type="submit" formaction="{% url 'qcform:index' %}" formmethod="get">Back to main</button>
   </form>
 

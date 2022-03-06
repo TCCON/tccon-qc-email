@@ -3,6 +3,7 @@ from django.utils.safestring import mark_safe
 from django.core.serializers.json import DjangoJSONEncoder
 from tcconauth import utils
 
+from copy import copy
 import re
 import json
 
@@ -422,6 +423,7 @@ class DraftQcReport(models.Model):
     # field, which is a cleaner solution anyway (as it will always be able to store the same fields as the QcReport
     # model without modifying *this* class).
     reviewer = models.CharField(max_length=128, verbose_name='Reviewer')
+    report = models.ForeignKey('QCReport', on_delete=models.CASCADE, null=True)
     modification_time = models.DateTimeField(auto_now=True)
     draft_data = models.JSONField(encoder=DjangoJSONEncoder, decoder=DraftJSONDecoder)
 
@@ -441,4 +443,35 @@ class DraftQcReport(models.Model):
         reviewer = json_data.pop('reviewer', None)
         if reviewer is None:
             raise RuntimeError('Draft must be associated with a user')
-        return cls(reviewer=reviewer, draft_data=json_data)
+
+        associated_form = int(request_post.get('form_id', -1))
+        if associated_form < 0:
+            associated_form = None
+        # TODO: test whether it is okay to pass an ID to a foreign key field
+        # else:
+        #     try:
+        #         associated_form = QCReport.objects.get(id=associated_form)
+        #     except QCReport.DoesNotExist:
+        #         associated_form = None
+
+        draft_id = int(request.POST.get('draft_id', -1))
+        if draft_id >= 0:
+            # We need to update an existing draft
+            try:
+                previous_draft = DraftQcReport.objects.get(id=draft_id)
+            except DraftQcReport.DoesNotExist:
+                # This is a fallback - it should not happen, but if somehow this form is submitting an update for a
+                # draft that never existed, just create the draft.
+                return cls(reviewer=reviewer, report=associated_form, draft_data=json_data)
+            else:
+                previous_draft.reviewer = reviewer
+                previous_draft.report = associated_form
+                previous_draft.draft_data = json_data
+                return previous_draft
+        else:
+            return cls(reviewer=reviewer, report=associated_form, draft_data=json_data)
+
+    def to_dict(self):
+        data = copy(self.draft_data)
+        data['reviewer'] = self.reviewer
+        return data

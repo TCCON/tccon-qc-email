@@ -6,6 +6,7 @@ from django.views import View
 from. models import QCReport, DraftQcReport
 from .forms import QcReportForm, QcFilterForm
 
+from copy import copy
 import io
 import re
 import xhtml2pdf.pisa as pisa
@@ -39,9 +40,10 @@ class FormListView(View):
             username = request.user.get_username()
             my_reports = QCReport.objects.filter(reviewer=username)
             other_reports = QCReport.objects.exclude(reviewer=username)
-
+            my_drafts = DraftQcReport.objects.filter(reviewer=username)
         else:
             my_reports = None
+            my_drafts = None
             other_reports = QCReport.objects.all()
 
         user_filter = self._build_filter(request)
@@ -58,6 +60,7 @@ class FormListView(View):
             'message': request.GET.get('msg', None),
             'is_auth': request.user.is_authenticated,
             'my_reports': self._reports_to_table(my_reports),
+            'my_drafts': self._reports_to_table(my_drafts),
             'other_reports': self._reports_to_table(other_reports),
             'filter_form': QcFilterForm(request.GET)
         }
@@ -90,14 +93,26 @@ class FormListView(View):
 
         table_rows = []
         for report in reports:
+            if isinstance(report, DraftQcReport):
+                draft_id = report.id
+                report_id = None if report.report is None else report.report.id
+                site = report.draft_data.get('site', '')
+                nc_files = report.draft_data.get('netcdf_files', '')
+            else:
+                draft_id = None
+                report_id = report.id
+                site = report.site
+                nc_files = report.netcdf_files
+
             table_rows.append({
-                'id': report.id,
+                'id': report_id,
+                'draft_id': draft_id,
                 'user': report.reviewer,
-                'site': report.site,
-                'nc_files': _string_to_oneline(report.netcdf_files, max_length=32),
+                'site': site,
+                'nc_files': _string_to_oneline(nc_files, max_length=32),
                 'mod_time': report.modification_time.strftime('%Y-%m-%d %H:%M:%S %Z')
             })
-        return  table_rows
+        return table_rows
 
 
 class EditQcFormView(View):
@@ -105,12 +120,27 @@ class EditQcFormView(View):
         if not request.user.is_authenticated:
             # TODO: redirect to log in page
             raise Http404('Must be logged in')
-        if form_id < 0:
+
+        draft_id = int(request.GET.get('draft_id', -1))
+        # There are four possible cases:
+        #   1. Wholly new form (not editing existing form or draft)
+        #   2. Editing existing draft (that has no corresponding saved form)
+        #   3. Editing submitted form, no draft.
+        #   4. Editing a draft modification to an existing form.
+        if form_id < 0 and draft_id < 0:
             form = QcReportForm(initial={'reviewer': request.user.get_username()})
-        else:
+        elif form_id < 0 and draft_id >= 0:
+            data = DraftQcReport.objects.get(id=draft_id).to_dict()
+            form = QcReportForm(initial=data)
+        elif form_id >= 0 and draft_id < 0:
             report = QCReport.objects.get(id=form_id)
             form = QcReportForm(instance=report)
-        context = {'qcform': form, 'form_id': form_id}
+        else:
+            report = QCReport.objects.get(id=form_id)
+            draft_data = DraftQcReport.objects.get(id=draft_id).to_dict()
+            form = QcReportForm(instance=report, initial=draft_data)
+
+        context = {'qcform': form, 'form_id': form_id, 'draft_id': draft_id, 'has_draft': draft_id >= 0}
         # f = context['qcform']
         # print(f.sections()[1])
         return render(request, 'qcform/edit_qc_report.html', context=context)
@@ -155,6 +185,10 @@ class SaveDraftQcFormView(View):
     #     That means that we need logic in the editing form to keep track of whether it was a resumed draft, UPDATE the
     #   draft if a new draft saved (should actually change the button text), and only delete the draft when the final
     #   form is submitted and *accepted* - also don't want it to be deleted if the form is invalid!
+    #
+    #   2022-02-22: I have this to a point where the list view allows us to load and delete drafts. I've not yet tested
+    #   submitting a draft as a completed form. Will also need to retest editing a form and submitting right away,
+    #   editing a form and saving a draft, and resuming a draft edit and submitting it.
     def get(self, request):
         raise Http404('Wrong request type!')
 
@@ -177,6 +211,21 @@ class DeleteQcForm(View):
         report.delete()
 
         url = '{}/?msg=deleted'.format(reverse('qcform:index').rstrip('?').rstrip('/'))
+        return HttpResponseRedirect(url)
+
+
+class DeleteDraft(View):
+    def post(self, request, draft_id):
+        if not request.user.is_authenticated:
+            raise Http404('Must be logged in')
+
+        draft = DraftQcReport.objects.get(id=draft_id)
+        if not draft.reviewer == request.user.get_username():
+            raise ValueError('Draft reviewer does not match username')
+
+        draft.delete()
+
+        url = '{}/?msg=deleted-draft'.format(reverse('qcform:index').rstrip('?').rstrip('/'))
         return HttpResponseRedirect(url)
 
 
