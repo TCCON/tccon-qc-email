@@ -99,7 +99,7 @@ class FormListView(View):
                 site = report.draft_data.get('site', '')
                 nc_files = report.draft_data.get('netcdf_files', '')
             else:
-                draft_id = None
+                draft_id = DraftQcReport.objects.get_draft_for_report(report, return_id=True)
                 report_id = report.id
                 site = report.site
                 nc_files = report.netcdf_files

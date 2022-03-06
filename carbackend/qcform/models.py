@@ -412,10 +412,22 @@ O2 CL slope of 0.01, such a slope should be near 0 when no nonlinearity is prese
         raise KeyError(key)
 
 
+class DraftQcReportManager(models.Manager):
+    def get_draft_for_report(self, report: QCReport, return_id=False):
+        drafts = self.filter(report=report)
+        if len(drafts) == 0:
+            return None
+        else:
+            return drafts[0].id if return_id else drafts[0]
+
+
 class DraftQcReport(models.Model):
     class DraftJSONDecoder(json.JSONDecoder):
-        # TODO: handle converting date strings (for the "when" fields) back into date (datetime?) objects if needed
+        # This was to handle converting date strings (for the "when" fields) back into date (datetime?) objects if,
+        # but it doesn't seem to be, so I'll just leave it here if custom decoding is needed in the future.
         pass
+
+    objects = DraftQcReportManager()
 
     # This model uses a JSON field to store everything other than the reviewer and modification time because it needs
     # to mirror the QcReport model. I tried inheriting that model and overriding the fields that were required with
