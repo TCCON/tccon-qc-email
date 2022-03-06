@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>TCCON Quality Control Review Form</title>
 
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
@@ -213,7 +213,8 @@
       <button type="submit" formaction="{% url 'qcform:savedraft' %}" formnovalidate>
           {% if has_draft %} Update draft {% else %} Save draft {% endif %}
       </button>
-      <button type="submit" formaction="{% url 'qcform:index' %}" formmethod="get">Back to main</button>
+      <!--Can't be a submit button, or all the form data goes in the GET request -->
+      <input type="button" name="cancel" value="Back to main" onClick="window.location.href='{% url 'qcform:index' %}';">
   </form>
 
 </body>

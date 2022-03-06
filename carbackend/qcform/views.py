@@ -176,7 +176,11 @@ class EditQcFormView(View):
             form.save()
 
             # Once the form saved successfully, it's safe to delete the draft we were editing,
-            # assuming one existed.
+            # assuming one existed. There is an edge case where someone can edit a form, save a draft,
+            # then go back in the browser, and submit. Because the original edit doesn't have the draft ID,
+            # it doesn't get deleted. This could be fixed by searching for drafts that reference the final
+            # report, instead of relying on the draft_id parameter, but then we'd potentially delete all drafts,
+            # which may or may not be desirable.
             if draft_id >= 0:
                 draft = DraftQcReport.objects.get(id=draft_id)
                 if not draft.reviewer == request.user.get_username():
