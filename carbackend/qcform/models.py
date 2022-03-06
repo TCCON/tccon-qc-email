@@ -447,12 +447,11 @@ class DraftQcReport(models.Model):
         associated_form = int(request_post.get('form_id', -1))
         if associated_form < 0:
             associated_form = None
-        # TODO: test whether it is okay to pass an ID to a foreign key field
-        # else:
-        #     try:
-        #         associated_form = QCReport.objects.get(id=associated_form)
-        #     except QCReport.DoesNotExist:
-        #         associated_form = None
+        else:
+            try:
+                associated_form = QCReport.objects.get(id=associated_form)
+            except QCReport.DoesNotExist:
+                associated_form = None
 
         draft_id = int(request.POST.get('draft_id', -1))
         if draft_id >= 0:

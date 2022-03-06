@@ -157,6 +157,11 @@ class EditQcFormView(View):
             # should happen with new forms; no existing ID, so the value is an empty string
             form_id = -1
 
+        try:
+            draft_id = int(request.POST.get('draft_id', -1))
+        except ValueError:
+            draft_id = -1
+
         if form_id > 0:
             existing_report = QCReport.objects.get(id=form_id)
         else:
@@ -169,6 +174,16 @@ class EditQcFormView(View):
                 raise ValueError('Form reviewer does not match username')
 
             form.save()
+
+            # Once the form saved successfully, it's safe to delete the draft we were editing,
+            # assuming one existed.
+            if draft_id >= 0:
+                draft = DraftQcReport.objects.get(id=draft_id)
+                if not draft.reviewer == request.user.get_username():
+                    raise ValueError('Draft reviewer does not match username')
+
+                draft.delete()
+
             url = '{}/?msg=success'.format(reverse('qcform:index').rstrip('?').rstrip('/'))
             return HttpResponseRedirect(url)
         else:
@@ -176,19 +191,6 @@ class EditQcFormView(View):
 
 
 class SaveDraftQcFormView(View):
-    # TODO: handle retrieving drafts
-    #     This will need another table on the list page when users are logged in, which is fine.
-    #   The trickier part is how to handle further editing of the draft. The simplest approach is just to delete the
-    #   draft as soon as it is reopened, and only resave it if told to. However, that could lead to unexpected behavior,
-    #   if someone opens a draft, does nothing, then closes down their browser. They'd probably expect the draft to
-    #   still be there.
-    #     That means that we need logic in the editing form to keep track of whether it was a resumed draft, UPDATE the
-    #   draft if a new draft saved (should actually change the button text), and only delete the draft when the final
-    #   form is submitted and *accepted* - also don't want it to be deleted if the form is invalid!
-    #
-    #   2022-02-22: I have this to a point where the list view allows us to load and delete drafts. I've not yet tested
-    #   submitting a draft as a completed form. Will also need to retest editing a form and submitting right away,
-    #   editing a form and saving a draft, and resuming a draft edit and submitting it.
     def get(self, request):
         raise Http404('Wrong request type!')
 
