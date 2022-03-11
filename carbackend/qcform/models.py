@@ -275,9 +275,9 @@ be brought to the PI’s attention, especially if they correspond with deviation
     sg_cmts = models.TextField(blank=True, verbose_name='Comments')
 
     nonlin_title = 'Nonlinearity'
-    nonlin_message = """Examine plots of rolling derivative of DIP vs. CL, the DIP vs. CL scatter plot, and the 
-timeseries of DIP itself. Sodankyla 2017 data (with a known nonlinearity) had a DIP vs.
-O2 CL slope of 0.01, such a slope should be near 0 when no nonlinearity is present."""
+    nonlin_message = """Examine time series plots of DIP and CL, along with the rolling derivative of DIP vs. CL, and the DIP vs. CL scatter plot. 
+A significant relationship between DIP and CL could indicate that the detectors run in a nonlinear regime, particularly if DIP<0. (As a reference 
+point, the Sodankylä DIP vs. CL slope when the signal levels were too high is around 0.01, and 0 when the light levels were limited.) At this time, we do not understand what DIP>0 indicates."""
     nonlin_present = models.CharField(max_length=1, choices=_choices_ynu, verbose_name='Nonlinearity present')
     nonlin_when0s = models.DateField(blank=True, null=True)
     nonlin_when0e = models.DateField(blank=True, null=True)
