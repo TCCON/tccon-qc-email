@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>TCCON Quality Control Review Form</title>
 
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.dirtyforms/2.0.0/jquery.dirtyforms.min.js" integrity="sha512-W6DphLVq1HUtS0+F8cjcrVJWxZDzgPNgvGAdk9e9JMGynNnXEVWvNSVTFT2paAcoq0ZRrblp3KUixkERkKKncA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     <!-- Fengyuan Chen's Datepicker -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/datepicker/0.6.5/datepicker.min.css" integrity="sha256-b88RdwbRJEzRx95nCuuva+hO5ExvXXnpX+78h8DjyOE=" crossorigin="anonymous" />
@@ -35,6 +36,12 @@
             grid-area: span 2 / span 1;
         }
     </style>
+
+    <script>
+        $(document).ready(function() {
+            $("#qc-form").dirtyForms();
+        });
+    </script>
 </head>
 </head>
 <body>
@@ -57,9 +64,10 @@
 
   <p><b>Note:</b>some Unicode characters cannot be stored. If you get a server error when submitting your form, please remove non-ASCII characters.</p>
 
-  <form action="{% url 'qcform:edit' %}" method="post">
+  <form action="{% url 'qcform:edit' %}" method="post" id="qc-form">
       {% csrf_token %}
       <input type="hidden" id="form_id" name="form_id" value="{{ form_id }}">
+      <input type="hidden" id="draft_id" name="draft_id" value="{{ draft_id }}">
       <h2>Preface</h2>
       {% for preface in qcform.preface %}
           <table>
@@ -211,8 +219,12 @@
       {% endfor %}
 
       <button type="submit">Save form</button>
+      <button type="submit" formaction="{% url 'qcform:savedraft' %}" formnovalidate>
+          {% if has_draft %} Update draft {% else %} Save draft {% endif %}
+      </button>
+      <!--Can't be a submit button, or all the form data goes in the GET request -->
+      <input type="button" name="cancel" value="Back to main" onClick="window.location.href='{% url 'qcform:index' %}';">
   </form>
 
-  <form action="{% url 'qcform:index' %}"><button type="submit">Back to main</button></form>
 </body>
 </html>

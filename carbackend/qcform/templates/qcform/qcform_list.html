@@ -26,8 +26,12 @@
   <div>
     {% if message == 'success' %}
     Successfully saved QC form.
+    {% elif message == 'draft-success' %}
+    Successfully saved draft.
     {% elif message == 'deleted' %}
     Successfully deleted QC form.
+    {% elif message == 'deleted-draft' %}
+    Successfully deleted draft.
     {% endif %}
   </div>
   {% endif %}
@@ -52,6 +56,40 @@
 
   {% if is_auth %}
   <h2>My reports</h2>
+  <form action="{% url 'qcform:edit' %}"><button type="submit">New form</button></form>
+  {% if my_drafts %}
+  <h3>Drafts</h3>
+  <table id="myDraftsTable">
+    <tr>
+      <th colspan="2">Actions</th>
+      <th onclick="sortTable(2, 'myDraftsTable', -1)">Reviewer</th>
+      <th onclick="sortTable(3, 'myDraftsTable', -1)">Site</th>
+      <th onclick="sortTable(4, 'myDraftsTable', -1)">netCDF files</th>
+      <th onclick="sortTable(5, 'myDraftsTable', -1)">Last modified</th>
+    </tr>
+    {% for row in my_drafts %}
+    <tr>
+      {% if row.id %}
+      <td><a href="{% url 'qcform:edit' row.id %}?draft_id={{ row.draft_id }}">Edit</a></td>
+      {% else %}
+      <td><a href="{% url 'qcform:edit' %}?draft_id={{ row.draft_id }}">Edit</a></td>
+      {% endif %}
+      <td><form action="{% url 'qcform:deletedraft' row.draft_id %}" method="post">{% csrf_token %}<button type="submit">Delete</button></form> </td>
+      <td>{{ row.user }}</td>
+      <td>{{ row.site }}</td>
+      <td>{{ row.nc_files }}</td>
+      <td>{{ row.mod_time }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+
+  <h3>Completed reports</h3>
+
+  <p>If you have previously started editing a submitted form and saved a draft of the edit, then the first
+  column of this table will display "Resume draft," and that draft will be one of those listed in the table
+  above. If the first column says "Edit form," there is no existing draft.</p>
+
   <table id="myReportsTable">
     <tr>
       <th colspan="3">Actions</th>
@@ -60,10 +98,18 @@
       <th onclick="sortTable(5, 'myReportsTable', -2)">netCDF files</th>
       <th onclick="sortTable(6, 'myReportsTable', -2)">Last modified</th>
     </tr>
-    <tr class="skipsorting"><td><a href="{% url 'qcform:edit' %}">New form</a></td><td></td><td></td></tr>
     {% for row in my_reports %}
     <tr>
-      <td><a href="{% url 'qcform:edit' row.id %}">Edit</a></td>
+      <td>
+        <!--If the user has already started editing one of their existing forms, we want the edit link to resume
+            that draft. That both (a) indicates that a draft exists and (b) prevents multiple drafts from profilerating.
+          -->
+        {% if row.draft_id %}
+        <a href="{% url 'qcform:edit' row.id %}?draft_id={{ row.draft_id }}">Resume draft</a>
+        {% else %}
+        <a href="{% url 'qcform:edit' row.id %}">Edit form</a>
+        {% endif %}
+      </td>
       <td><a href="{% url 'qcform:pdf' row.id %}">Get PDF</a></td>
       <td><form action="{% url 'qcform:delete' row.id %}" method="post">{% csrf_token %}<button type="submit">Delete</button></form> </td>
       <td>{{ row.user }}</td>
@@ -82,7 +128,8 @@
       <th onclick="sortTable(1, 'otherReportsTable')">Reviewer</th>
       <th onclick="sortTable(2, 'otherReportsTable')">Site</th>
       <th onclick="sortTable(3, 'otherReportsTable')">netCDF files</th>
-      <th onclick="sortTable(4, 'otherReportsTable')">Last modified</th></tr>
+      <th onclick="sortTable(4, 'otherReportsTable')">Last modified</th>
+      <th onclick="sortTable(5, 'otherReportsTable')">Draft edit exists</th></tr>
     {% for row in other_reports %}
     <tr>
       <td><a href="{% url 'qcform:pdf' row.id %}">Get PDF</a></td>
@@ -90,6 +137,7 @@
       <td>{{ row.site }}</td>
       <td>{{ row.nc_files }}</td>
       <td>{{ row.mod_time }}</td>
+      <td>{% if row.draft_id %}Yes{% else %}No{% endif %}</td>
     </tr>
     {% endfor %}
   </table>
