@@ -34,6 +34,7 @@ class SiteStatus(models.Model):
             ("eu_status", "Can update the Eureka site status"),
             ("fc_status", "Can update the Four Corners site status"),
             ("gm_status", "Can update the Garmisch site status"),
+            ("hf_status", "Can update the Hefei site status"),
             ("ht_status", "Can update the Arrival Heights site status"),
             ("hw_status", "Can update the Harwell site status"),
             ("if_status", "Can update the Indianapolis site status"),
