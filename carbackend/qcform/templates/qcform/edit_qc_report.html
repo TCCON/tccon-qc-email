@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TCCON Quality Control Review Form</title>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.dirtyforms/2.0.0/jquery.dirtyforms.min.js" integrity="sha512-W6DphLVq1HUtS0+F8cjcrVJWxZDzgPNgvGAdk9e9JMGynNnXEVWvNSVTFT2paAcoq0ZRrblp3KUixkERkKKncA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <!-- Fengyuan Chen's Datepicker -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/datepicker/0.6.5/datepicker.min.css" integrity="sha256-b88RdwbRJEzRx95nCuuva+hO5ExvXXnpX+78h8DjyOE=" crossorigin="anonymous" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datepicker/0.6.5/datepicker.min.js" integrity="sha256-/7FLTdzP6CfC1VBAj/rsp3Rinuuu9leMRGd354hvk0k=" crossorigin="anonymous"></script>
+
+    <style>
+        .flex-container {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+        }
+
+        .form-el {
+            margin: 16px;
+        }
+    </style>
+
+    <style>
+        .question-grid {
+            display: grid;
+            grid-template-rows: auto auto;
+            grid-auto-flow: column;
+            margin: 1rem;
+        }
+
+        .date-grid-cell {
+            grid-area: span 2 / span 1;
+        }
+    </style>
+
+    <script>
+        $(document).ready(function() {
+            $("#qc-form").dirtyForms();
+        });
+    </script>
+</head>
+</head>
+<body>
+    {% if qcform.non_field_errors %}
+    <p>The following general errors must be corrected:</p>
+    <!-- Not sure what this looks like, don't have any non-field errors currently -->
+    {{ qcform.non_field_errors }}
+    {% endif %}
+
+  {% if qcform.errors %}
+  <p>One or more fields have errors:</p>
+  <ul>
+    {% for key, err_list in qcform.errors.items %}
+      {% for err in err_list %}
+        <li><a href="#id_{{key}}">{{ err }}</a> </li>
+      {% endfor %}
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <p><b>Note:</b>some Unicode characters cannot be stored. If you get a server error when submitting your form, please remove non-ASCII characters.</p>
+
+  <form action="{% url 'qcform:edit' %}" method="post" id="qc-form">
+      {% csrf_token %}
+      <input type="hidden" id="form_id" name="form_id" value="{{ form_id }}">
+      <input type="hidden" id="draft_id" name="draft_id" value="{{ draft_id }}">
+      <h2>Preface</h2>
+      {% for preface in qcform.preface %}
+          <table>
+              {% for question in preface.questions %}
+              {% for field in question.mcs %}
+              <tr>
+                  <th>{{ field.label }}:</th>
+                  {% if field.name == "reviewer" %}
+                  <td>{{ field.value }}</td>
+                  <input type="hidden" id="id_reviewer" name="reviewer" value="{{ field.value }}">
+                  {% else %}
+                  <td>
+                      {{ field }}
+                      {% if field.errors %}
+                      <p>ERROR:</p>
+                      <ul>
+                        {% for err in field.errors %}
+                        <li>{{ err }}</li>
+                        {% endfor %}
+                      </ul>
+                      {% endif %}
+                  </td>
+                  {% endif %}
+              </tr>
+              {% endfor %}
+              {% endfor %}
+          </table>
+      {% endfor %}
+
+      {% for section in qcform.sections_no_preface %}
+      <h2>{{ section.name }}</h2>
+        {{ section.intro }}
+        {% for question in section.questions %}
+            <div>
+                <h3>{{ question.title }}</h3>
+                <p>{{ question.message }}</p>
+                {% for field in question.mcs %}
+                <div>
+                    <p>{{ field.label }}: {{ field }}</p>
+                    {% if field.errors %}
+                      <p>ERROR:</p>
+                      <ul>
+                        {% for err in field.errors %}
+                        <li>{{ err }}</li>
+                        {% endfor %}
+                      </ul>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                <!-- Date range or individual dates section. Table is:
+                Period                    | 1    | 2    | 3    | ...
+                Approx. start/Approx date | s1   | s2   | s3   | ...
+                                          | errs | errs | errs | ...
+                Approx. end               | e1   | e2   | e3   | ...
+                                          | errs | errs | errs | ...
+                -->
+                {% if question.whens %}
+                <div><table>
+                    <tr>
+                        <th>Period</th>
+                        {% for period in question.whens %}
+                            <td>{{ forloop.counter }}</td>
+                        {% endfor %}
+                    </tr>
+
+                    {% if question.whens_type == 'paired' %}
+                        <tr>
+                            <th>Approx. start</th>
+                            {% for period in question.whens %}
+                                <td>
+                                    {{ period.0 }}
+                                </td>
+                            {% endfor %}
+                        </tr>
+
+                        <tr>
+                            <th></th>
+                            {% for period in question.whens %}
+                                <td>
+                                    {% for err in period.0.errors %}
+                                    <p>ERROR: {{ err }}</p>
+                                    {% endfor %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+
+                        <tr>
+                            <th>Approx. end</th>
+                            {% for period in question.whens %}
+                                <td>
+                                    {{ period.1 }}
+                                </td>
+                            {% endfor %}
+                        </tr>
+
+                        <tr>
+                            <th></th>
+                            {% for period in question.whens %}
+                                <td>
+                                    {% for err in period.1.errors %}
+                                    <p>ERROR: {{ err }}</p>
+                                    {% endfor %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <th>Approx. date</th>
+                            {% for period in question.whens %}
+                            <td>
+                                {{ period.0 }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+
+                        <tr>
+                            <th></th>
+                            {% for period in question.whens %}
+                            <td>
+                                {% for err in period.0.errors %}
+                                    <p>ERROR: {{ err }}</p>
+                                {% endfor %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                    {% endif %}
+                </table></div>
+                {% endif %}
+
+                <!-- End time periods table-->
+
+                {% for field in question.cmts %}
+                <div>
+                    {{field.label}}: {{field}}
+
+                    {% if field.errors %}
+                      <p>ERROR:</p>
+                      <ul>
+                        {% for err in field.errors %}
+                        <li>{{ err }}</li>
+                        {% endfor %}
+                      </ul>
+                      {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+      {% endfor %}
+
+      <button type="submit">Save form</button>
+      <button type="submit" formaction="{% url 'qcform:savedraft' %}" formnovalidate>
+          {% if has_draft %} Update draft {% else %} Save draft {% endif %}
+      </button>
+      <!--Can't be a submit button, or all the form data goes in the GET request -->
+      <input type="button" name="cancel" value="Back to main" onClick="window.location.href='{% url 'qcform:index' %}';">
+  </form>
+
+</body>
+</html>

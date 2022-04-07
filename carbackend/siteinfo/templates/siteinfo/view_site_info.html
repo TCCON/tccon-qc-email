@@ -37,7 +37,9 @@
             {% endfor %}
         </table>
         {% else %}
-            <p>No {{ section }} metadata defined! If you are responsible for this site, go to the edit link below to update this site's information.</p>
+            <p>No {{ section }} metadata defined! If you are responsible for this site, go to the edit link below to update this site's information. (The edit button is
+               only available if you are {% if is_auth %}logged in{% else %}<a href="{% url 'login' %}?next={% url 'siteinfo:view' site_id %}">logged in</a>{% endif %} 
+               and have permission to edit this site.)</p>
         {% endif %}
     </div>
     {% endfor %}

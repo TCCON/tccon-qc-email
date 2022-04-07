@@ -36,6 +36,7 @@ if settings.ENABLE_SITE_STATUS:
     urlpatterns.append(path('opstat/', include('opstat.urls')))
 if settings.ENABLE_SITE_METADATA:
     urlpatterns.append(path('siteinfo/', include('siteinfo.urls')))
+    urlpatterns.append(path('qcform/', include('qcform.urls')))
 if settings.ENABLE_SITE_STATUS or settings.ENABLE_SITE_METADATA:
     urlpatterns.extend([
         path('', _redirect_index),

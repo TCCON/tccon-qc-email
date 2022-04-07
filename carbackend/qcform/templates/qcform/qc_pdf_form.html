@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TCCON QA/QC form for {{ site }}</title>
+<!--    <link rel="stylesheet" href="https://unpkg.com/latex.css/style.min.css" />-->
+</head>
+<body>
+
+<h1>TCCON QA/QC report: {{ site }}</h1>
+<h2>Preface</h2>
+
+  {% if reviewer_full_name %}
+  <p><i>Reviewer</i>: {{ reviewer_full_name }} ({{ reviewer_user_name }})</p>
+  {% else %}
+  <p><i>Reviewer</i>: {{ reviewer_user_name }}</p>
+  {% endif %}
+  <p><i>Site</i>: {{ site }}</p>
+  <p><i>netCDF files</i>: {{ report.netcdf_files | linebreaks }}</p>
+
+
+{% for section in report.sections_with_values_no_preface %}
+<h2>{{ section.name }}</h2>
+{% if not brief %}{{ section.intro }}{% endif %}
+
+    {% for question in section.questions %}
+    <h3>{{ question.title }}</h3>
+    {% if not brief %}<p>{{ question.message }}</p>{% endif %}
+        {% for field in question.mcs %}
+        <p><i>{{ field.label }}</i>: {{ field.value }}</p>
+        {% endfor %}
+
+        {% if question.whens %}
+            <p><i>Time periods:</i></p>
+            <ul>
+                {% for when in question.whens %}
+                    <li>{{ when }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {% for field in question.cmts %}
+            {% if field.value %}
+                <p><i>{{ field.label }}</i>:</p>
+                <p>{{ field.value | linebreaks }}</p>
+            {% else %}
+                <p><i>{{ field.label }}</i>: None</p>
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+{% endfor %}
+</body>
+</html>

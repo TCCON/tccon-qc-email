@@ -198,7 +198,10 @@ class SiteDoiForm(forms.Form):
     @classmethod
     def json_to_dict(cls, doi_metadata):
         title = doi_metadata['titles'][0]['title']
-        geo_data = doi_metadata['geoLocations'][0]
+        if 'geoLocations' in doi_metadata:
+            geo_data = doi_metadata['geoLocations'][0]
+        else:
+            geo_data = {'geoLocationPoint': {'pointLatitude': None, 'pointLongitude': None}}
         return {
             'site': re.search(r'TCCON data from (.+), Release GGG2020', title).group(1),
             'location_place': geo_data.get('geoLocationPlace', None),
@@ -797,6 +800,9 @@ class TypeRestrictedFileField(FileField):
 
     def clean(self, *args, **kwargs):
         data = super().clean(*args, **kwargs)
+        if data is None:
+            return None
+
         file = data.file
         try:
             content_type = data.content_type
@@ -824,7 +830,7 @@ class ReleaseFlagUpdateForm(Form):
     plot = TypeRestrictedFileField(label='Upload an image of a plot',
                                    required=False,
                                    max_upload_bytes=5*1024**2,  # 5 MB
-                                   content_types=('image/jpg', 'image/png'))
+                                   content_types=('image/jpg', 'image/jpeg', 'image/png'))
 
     def clean(self):
         cleaned_data = super().clean()
