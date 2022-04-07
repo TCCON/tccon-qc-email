@@ -1,7 +1,7 @@
 import traceback
 
 from django.db import transaction, Error as DBError
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import timezone as tz
@@ -109,3 +109,64 @@ def update(request, site_id):
     else:
         url = '{}?status=goodupdate&site={}'.format(reverse('opstat:index'), site_info.sitename)
         return HttpResponseRedirect(url)
+
+
+def api_get_all_statuses_by_id(request):
+    site_info = SiteStatus.objects.all()
+    data = dict()
+    for info in site_info:
+        if info.status == 'r':
+            # Do not display "retired" sites by default
+            continue
+
+        data[info.siteid] = _status_obj_to_dict(info)
+    return JsonResponse(data, status=200)
+
+
+def api_get_all_statuses_by_name(request):
+    site_info = SiteStatus.objects.all()
+    data = dict()
+    for info in site_info:
+        if info.status == 'r':
+            # Do not display "retired" sites by default
+            continue
+
+        data[info.sitename] = _status_obj_to_dict(info)
+    return JsonResponse(data, status=200)
+
+
+def api_get_status_by_id(request, site_id):
+    try:
+        site_info = SiteStatus.objects.get(siteid=site_id)
+    except SiteStatus.DoesNotExist:
+        data = {'error': 'No side with ID={sid} found'.format(sid=site_id)}
+        return JsonResponse(data, status=406)
+    else:
+        return JsonResponse(_status_obj_to_dict(site_info), status=200)
+
+
+def api_get_status_by_name(request, name):
+    try:
+        # Some sites have multiple instruments with the same name, e.g. Lauder has lh, ll, and lr
+        # all under "Lauder", but only one should have a status other than "retired".
+        site_info = SiteStatus.objects.get(sitename=name, status__in='yn')
+    except SiteStatus.DoesNotExist:
+        data = {'error': 'No side with name={name} found'.format(name=name)}
+        return JsonResponse(data, status=406)
+    except SiteStatus.MultipleObjectsReturned:
+        data = {'error': 'Multiple sites with name={name} found'.format(name=name)}
+        return JsonResponse(data, status=406)
+    else:
+        return JsonResponse(_status_obj_to_dict(site_info), status=200)
+
+
+def _status_obj_to_dict(obj):
+    return {
+        'id': obj.siteid,
+        'name': obj.sitename,
+        'status': obj.pretty_status,
+        'descr': obj.description,
+        'user': obj.username,
+        'date': obj.date.strftime('%Y%m%d'),
+        'display_descr': '{descr} [{user} {date}]'.format(descr=obj.description, user=obj.username, date=obj.date.strftime('%Y%m%d'))
+    }
