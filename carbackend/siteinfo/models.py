@@ -128,6 +128,7 @@ class InfoFileLocks(models.Model):
     @classmethod
     def update_metadata_repo(cls, metadata_file, metadata_dict, username, **kwargs):
         kwargs.setdefault('ensure_ascii', False)
+        kwargs.setdefault('indent', 2)
 
         def callback():
             if has_file_changed():
