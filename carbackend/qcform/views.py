@@ -7,6 +7,7 @@ from. models import QCReport, DraftQcReport
 from .forms import QcReportForm, QcFilterForm
 
 from copy import copy
+from datetime import date
 import io
 import re
 import xhtml2pdf.pisa as pisa
@@ -264,4 +265,6 @@ class RenderPdfForm(View):
         pdf.seek(0)
 
         # return render(request, 'qcform/qc_pdf_form.html', context=context)
-        return HttpResponse(pdf, content_type='application/pdf')
+        response = HttpResponse(pdf, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{report.reviewer}_{report.site}_{report.modification_time:%Y%m%d}.pdf"'
+        return response
