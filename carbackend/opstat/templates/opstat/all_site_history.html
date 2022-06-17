@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TCCON {{ sitename }} status history</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/opstat.css' %}">
+</head>
+<body>
+    <div class="cr">
+        <h1>Status history for all sites</h1>
+
+        <p><a href="{% url 'opstat:index' %}">Back to main page</a></p>
+
+        <p>
+        {% if oldest_first %}
+        <a href="{% url 'opstat:all_history' %}?order=newest">Switch to most recent first</a>
+        {% else %}
+        <a href="{% url 'opstat:all_history' %}?order=oldest">Switch to least recent first</a>
+        {% endif %}
+        </p>
+
+        <table class="pretty-table">
+            <tr>
+                <th>Date</th>
+                <th>Site</th>
+                <th>Jump</th>
+                <th>Operational?</th>
+                <th>Description/reason</th>
+                <th>Updated by</th>
+            </tr>
+            {% for status in statuses %}
+            <tr id="{{ status.anchor }}">
+                <td>{{ status.status.date }}</td>
+                <td>{{ status.status.site.sitename }} ({{ status.status.site.siteid }}) </td>
+                <td style="white-space: nowrap;">
+                    {% if status.prev_anchor %}<a title="Jump to previous entry for this site" href="#{{ status.prev_anchor }}">▲</a>{% endif %}
+                    {% if status.next_anchor %}<a title="Jump to next entry for this site" href="#{{ status.next_anchor }}">▼</a>{% endif %}
+                </td>
+                <td>{{ status.status.pretty_status }}</td>
+                <td>{{ status.status.description }}</td>
+                <td>{{ status.status.username }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>

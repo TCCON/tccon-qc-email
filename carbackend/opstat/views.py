@@ -59,6 +59,28 @@ def history(request, site_id):
     return render(request, 'opstat/site_history.html', context=context)
 
 
+def all_site_history(request):
+    order = request.GET.get('order', 'newest')
+    order_by = 'date' if order == 'oldest' else '-date'
+    statuses = SiteStatusHistory.objects.order_by(order_by)
+
+    # Expand the statuses, mainly so we can add anchors to jump between statuses for sites
+    stat_dicts = []
+    last_stat_by_site = dict()
+    for s in statuses:
+        sid = s.site.siteid
+        this_anchor = '{sid}{date:%Y%m%d%H%M%S}'.format(sid=sid, date=s.date)
+        this_dict = {'status': s, 'anchor': this_anchor, 'next_anchor': None, 'prev_anchor': None}
+        if sid in last_stat_by_site:
+            last_stat_by_site[sid]['next_anchor'] = this_anchor
+            this_dict['prev_anchor'] = last_stat_by_site[sid]['anchor']
+        last_stat_by_site[sid] = this_dict
+        stat_dicts.append(this_dict)
+
+    context = {'statuses': stat_dicts, 'oldest_first': order == 'oldest'}
+    return render(request, 'opstat/all_site_history.html', context=context)
+
+
 def submitupdate(request, site_id, error_message=None):
     #import pdb; pdb.set_trace()
     req_perm = 'opstat.{}_status'.format(site_id)
