@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Site status API documentation</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/opstat.css' %}">
+</head>
+<body>
+    <h1>API documentation</h1>
+
+    <p><a href="{% url 'opstat:index' %}">Back to main page</a></p>
+
+    <h2>Overview</h2>
+
+    <p>The status API has four endpoints:</p>
+
+    <ul>
+        <li><code>api/getstatusall/byid</code> returns a dictionary of all site statuses identified by site ID</li>
+        <li><code>api/getstatusall/byname</code> returns a dictionary of all site statuses identified by site name</li>
+        <li><code>api/getstatus/byid/$SITEID</code> returns the status for <i>just</i> the site identified by the given site ID</li>
+        <li><code>api/getstatus/byname/$NAME</code> returns the status for <i>just</i> the site identified by the given name</li>
+    </ul>
+
+    <p>A status will have the following components:</p>
+
+    <ul>
+        <li><code>id</code>: the two-letter site ID</li>
+        <li><code>name</code>: the site name</li>
+        <li><code>status</code>: the operational status, which will be "Yes" for operational, "No" for non-operational,
+        and "Replaced/retired" if requesting a site by ID that has been superceded by a new ID (i.e. if a new instrument
+        was installed at the same site).</li>
+        <li><code>descr</code>: The description of the current status provided by the site personnel. May be empty.</li>
+        <li><code>user</code>: The user who last updated the site status.</li>
+        <li><code>date</code>: The date that the status was updated, in YYYYMMDD format.</li>
+        <li><code>display_descr</code>: A string that combines <code>descr</code>, <code>user</code>, and <code>date</code>
+        that can be displayed as a quick summary of the status.</li>
+    </ul>
+
+    <p>Should you request a nonexistant site ID with <code>api/getstatus/byid</code> or name with <code>api/getstatus/byname</code>,
+    the returned JSON will have a single field (<code>error</code>) and the status code will be 406.</p>
+
+    <h2>Examples</h2>
+
+    <ol>
+        <li>Get all sites, identified by their site ID:</li>
+        <pre>$ curl {{ root_uri }}{% url 'opstat:api-all-byid' %}
+
+ {
+  "ae": {
+    "id": "ae",
+    "name": "Ascension_Island",
+    "status": "No",
+    "descr": "Solar tracker dome failed. Unclear how this can be fixed under the current Covid-19 restrictions.",
+    "user": "dfeist",
+    "date": "20200813", "display_descr": "Solar tracker dome failed. Unclear how this can be fixed under the current Covid-19 restrictions. [dfeist 20200813]"
+    },
+  "an": {
+    "id": "an",
+    "name": "Anmyeondo",
+    "status": "Yes",
+    "descr": "Normal operation on August 19",
+    "user": "y_soh",
+    "date": "20200915",
+    "display_descr": "Normal operation on August 19 [y_soh 20200915]"
+    },
+  "bi": {
+    "id": "bi",
+    "name": "Bialystok",
+    "status": "No",
+    "descr": "Dismounted on 2018/10/01. System will be moved to Cyprus/Greece, first measurements expected in February 2019",
+    "user": "christof",
+    "date": "20181001",
+    "display_descr": "Dismounted on 2018/10/01. System will be moved to Cyprus/Greece, first measurements expected in February 2019 [christof 20181001]"
+    },
+  ...
+}
+        </pre>
+
+        <li>Get all sites, identified by their site names:</li>
+
+        <pre>$ curl {{ root_uri }}{% url 'opstat:api-all-byname' %}
+
+{
+  "Ascension_Island": {
+    "id": "ae",
+    "name": "Ascension_Island",
+    "status": "No",
+    "descr": "Solar tracker dome failed. Unclear how this can be fixed under the current Covid-19 restrictions.",
+    "user": "dfeist",
+    "date": "20200813",
+    "display_descr": "Solar tracker dome failed. Unclear how this can be fixed under the current Covid-19 restrictions. [dfeist 20200813]"
+    },
+  "Anmyeondo": {
+    "id": "an",
+    "name": "Anmyeondo",
+    "status": "Yes",
+    "descr": "Normal operation on August 19",
+    "user": "y_soh",
+    "date": "20200915",
+    "display_descr": "Normal operation on August 19 [y_soh 20200915]"
+    },
+  "Bialystok": {
+    "id": "bi",
+    "name": "Bialystok",
+    "status": "No",
+    "descr": "Dismounted on 2018/10/01. System will be moved to Cyprus/Greece, first measurements expected in February 2019",
+    "user": "christof",
+    "date": "20181001",
+    "display_descr": "Dismounted on 2018/10/01. System will be moved to Cyprus/Greece, first measurements expected in February 2019 [christof 20181001]"
+    },
+  ...
+}
+        </pre>
+
+        <li>Get one site (here, Park Falls) by its site ID:</li>
+        <pre>$ curl {{ root_uri }}{% url 'opstat:api-one-byid' site_id='pa' %}
+
+{
+    "id": "pa",
+    "name": "Park_Falls",
+    "status": "Yes",
+    "descr": "(Fingers crossed) Still working fine!",
+    "user": "coleen",
+    "date": "20220222",
+    "display_descr": "(Fingers crossed) Still working fine! [coleen 20220222]"
+}
+        </pre>
+
+        <li>Get one site (here, Park Falls) by its site name:</li>
+
+        <pre>$ curl {{ root_uri }}{% url 'opstat:api-one-byname' name='Park_Falls' %}
+
+{
+    "id": "pa",
+    "name": "Park_Falls",
+    "status": "Yes",
+    "descr": "(Fingers crossed) Still working fine!",
+    "user": "coleen",
+    "date": "20220222",
+    "display_descr": "(Fingers crossed) Still working fine! [coleen 20220222]"
+}
+        </pre>
+    </ol>
+
+    <p><a href="{% url 'opstat:index' %}">Back to main page</a></p>
+</body>
+</html>

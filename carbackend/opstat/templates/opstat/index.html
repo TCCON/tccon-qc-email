@@ -27,8 +27,9 @@
        <a href="{% url 'login' %}?next={% url 'opstat:index' %}">Log in.</a></p>
     {% endif %}
 
-    <p>You can access the machine parsable version <a href="{% url 'opstat:car' %}">here</a></p>
-    <p>A list of recent status updates is available <a href="{% url 'opstat:all_history' %}">here</a></p>
+    <p>A <a href="{% url 'opstat:car' %}">machine parsable version</a> is available, but we recommend
+        <a href="{% url 'opstat:api_docs' %}">using our JSON API instead.</a></p>
+    <p>A <a href="{% url 'opstat:all_history' %}">list of recent status updates</a> is available as well.</p>
 
     <table class="pretty-table">
         <thead>

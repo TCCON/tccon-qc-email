@@ -133,6 +133,11 @@ def update(request, site_id):
         return HttpResponseRedirect(url)
 
 
+def api_docs(request):
+    context = {'root_uri': request.build_absolute_uri('/').rstrip('/')}
+    return render(request, 'opstat/api_docs.html', context=context)
+
+
 def api_get_all_statuses_by_id(request):
     site_info = SiteStatus.objects.all()
     data = dict()
