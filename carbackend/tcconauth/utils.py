@@ -11,6 +11,7 @@ site_id_to_name = {
     "eu": "Eureka",
     "fc": "Four Corners",
     "gm": "Garmisch",
+    "hf": "Hefei",
     "ht": "Arrival Heights",
     "hw": "Harwell",
     "if": "Indianapolis",
