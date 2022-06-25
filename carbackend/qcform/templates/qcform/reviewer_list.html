@@ -11,10 +11,6 @@
 <body>
 <h1>Editors and reviewers for TCCON sites</h1>
 
-{% if msg %}
-<p><b>{{ msg }}</b></p>
-{% endif %}
-
 <table>
     <thead><th>Site</th><th>Editor</th><th>Reviewer 1</th><th>Reviewer 2</th></thead>
     {% for entry in reviewers %}
@@ -26,5 +22,7 @@
     </tr>
     {% endfor %}
 </table>
+
+<p><a href="{% url 'qcform:index' %}">Back to main</a></p>
 </body>
 </html>

@@ -11,10 +11,21 @@
 <body>
 <h1>Editors and reviewers for TCCON sites</h1>
 
+{% if msg %}
+<p><b>{{ msg }}</b></p>
+{% endif %}
+
 <form action="{% url 'qcform:setreviewers' %}" method="post">
     {% csrf_token %}
     {{ formset.management_form }}
     <table>
+        <thead>
+            <th>Site</th>
+            <th>Editor</th>
+            <th>Reviewer 1</th>
+            <th>Reviewer 2</th>
+            {% if formset.can_delete %}<th>Delete</th>{% endif %}
+        </thead>
     {% for form in formset %}
     {{ form.id }}
     <tr>
@@ -32,6 +43,7 @@
         <td>{{ form.editor }}</td>
         <td>{{ form.reviewer1 }}</td>
         <td>{{ form.reviewer2 }}</td>
+        {% if formset.can_delete %}<td>{{ form.DELETE }}</td>{% endif %}
     </tr>
     {% if form.errors %}
     <tr>
@@ -39,11 +51,14 @@
         <td>{{ form.editor.errors }}</td>
         <td>{{ form.reviewer1.errors }}</td>
         <td>{{ form.reviewer2.errors }}</td>
+        {% if formset.can_delete %}<td></td>{% endif %}
     </tr>
     {% endif %}
     {% endfor %}
     </table>
     <button type="submit">Update</button>
 </form>
+
+<p><a href="{% url 'qcform:index' %}">Back to main</a></p>
 </body>
 </html>

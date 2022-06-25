@@ -17,6 +17,14 @@ class DatePickerField(DateField):
         super().__init__(*args, input_formats=input_formats, **kwargs)
 
 
+class UserChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        if obj.first_name and obj.last_name:
+            return f'{obj.first_name} {obj.last_name}'
+        else:
+            return obj.username
+
+
 class BaseReviewersFormset(forms.BaseModelFormSet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -27,24 +35,31 @@ class ReviewersForm(forms.ModelForm):
     class Meta:
         model = SiteReviewers
         fields = ['site', 'editor', 'reviewer1', 'reviewer2']
+        field_classes = {
+            'editor': UserChoiceField,
+            'reviewer1': UserChoiceField,
+            'reviewer2': UserChoiceField
+        }
 
     def clean(self):
         cleaned_data = super().clean()
-        cd_copy = cleaned_data.copy()
-        import pdb; pdb.set_trace()
+        # Because adding an error to a field removes that field from cleaned_data, we need to make
+        # a copy to do all of the pairwise checks. Plus this is more readable.
+        editor = cleaned_data['editor']
+        rev1 = cleaned_data['reviewer1']
+        rev2 = cleaned_data['reviewer2']
 
-        if cd_copy['reviewer1'] == cd_copy['editor']:
+        if editor and rev1 and rev1 == editor:
             self.add_error('reviewer1', ValidationError('Reviewer 1 cannot be the same as the editor', 'dup_reviewer'))
-        if cd_copy['reviewer2'] == cd_copy['editor']:
+        if editor and rev2 and rev2 == editor:
             self.add_error('reviewer2', ValidationError('Reviewer 2 cannot be the same as the editor', 'dup_reviewer'))
-        if cd_copy['reviewer2'] == cd_copy['reviewer1']:
+        if rev1 and rev2 and rev2 == rev1:
             self.add_error('reviewer2', ValidationError('Reviewer 2 cannot be the same as reviewer 1', 'dup_reviewer'))
 
         return cleaned_data
 
 
-ReviewersFormset = modelformset_factory(SiteReviewers, extra=1, form=ReviewersForm,
-                                        #fields=['site', 'editor', 'reviewer1', 'reviewer2'],
+ReviewersFormset = modelformset_factory(SiteReviewers, extra=1, form=ReviewersForm, can_delete=True,
                                         formset=BaseReviewersFormset)
 
 

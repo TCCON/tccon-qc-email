@@ -272,36 +272,34 @@ class RenderPdfForm(View):
 class ViewEditorsReviewers(View):
     def get(self, request):
         reviewer_list = SiteReviewers.objects.order_by('site').all()
-        msg_id = request.GET.get('msg', '')
-        if msg_id == 'success':
-            msg = 'Successfully updated reviewers'
-        else:
-            msg = ''
-        return render(request, 'qcform/reviewer_list.html', context={'reviewers': reviewer_list, 'msg': msg})
+        return render(request, 'qcform/reviewer_list.html', context={'reviewers': reviewer_list})
 
 
 class SetEditorsReviewers(View):
     def get(self, request):
         if not request.user.is_authenticated or not request.user.is_staff:
             return render(request, 'qcform/403.html', status=403)
+        msg = self._get_msg(request)
         forms = ReviewersFormset()
-        return render(request, 'qcform/set_reviewer_list.html', context={'formset': forms})
+        return render(request, 'qcform/set_reviewer_list.html', context={'formset': forms, 'msg': msg})
 
     def post(self, request):
         if not request.user.is_authenticated or not request.user.is_staff:
             return render(request, 'qcform/403.html', status=403)
 
+        msg = self._get_msg(request)
         forms = ReviewersFormset(request.POST)
         if forms.is_valid():
-            self._update_site_reviewers(forms)
-            url = '{}/?msg=success'.format(reverse('qcform:reviewers').rstrip('?').rstrip('/'))
+            forms.save()
+            url = '{}/?msg=success'.format(reverse('qcform:setreviewers').rstrip('?').rstrip('/'))
             return HttpResponseRedirect(url)
         else:
-            return render(request, 'qcform/set_reviewer_list.html', context={'formset': forms})
+            return render(request, 'qcform/set_reviewer_list.html', context={'formset': forms, 'msg': msg})
 
     @staticmethod
-    def _update_site_reviewers(reviewers_form):
-        with transaction.atomic():
-            for form in reviewers_form:
-                form.save()
-
+    def _get_msg(request):
+        msg_id = request.GET.get('msg', '')
+        if msg_id == 'success':
+            return 'Successfully updated reviewers'
+        else:
+            return ''
