@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 from django.utils.safestring import mark_safe
 from django.core.serializers.json import DjangoJSONEncoder
 from tcconauth import utils
@@ -126,11 +127,24 @@ and so do not require reprocessing. If the error is sufficiently large, the data
         raise NotImplementedError('_iter_fields_with_prefixes must be implemented in a child class')
 
 
+class SiteReviewers(models.Model):
+    site = models.CharField(max_length=2, choices=utils.get_sites_as_choices(label_fmt='name+id'),
+                            unique=True, verbose_name='Site')
+    # Here I'm okay with the foreign key relationship - if we delete a user, then they should go to NULL in this table
+    # The '+' says not to create a back relation to this model
+    editor = models.ForeignKey(User, models.SET_NULL, blank=True, null=True,
+                               limit_choices_to={'groups__name': 'QC Reviewers'}, related_name='+')
+    reviewer1 = models.ForeignKey(User, models.SET_NULL, blank=True, null=True,
+                                  limit_choices_to={'groups__name': 'QC Reviewers'}, related_name='+')
+    reviewer2 = models.ForeignKey(User, models.SET_NULL, blank=True, null=True,
+                                  limit_choices_to={'groups__name': 'QC Reviewers'}, related_name='+')
+
+
 # Create your models here.
 class QCReport(models.Model, ISection):
     # Debated about making reviewer a foreign key to the user database.
     # I decided against it because I don't want to deal with issues if
-    # we remove a user.
+    # we remove a user. (We want to keep a permanent record of who made the review.)
     reviewer = models.CharField(max_length=128, verbose_name='Reviewer')
     site = models.CharField(max_length=2, choices=utils.get_sites_as_choices(label_fmt='name+id'), verbose_name='Site')
     netcdf_files = models.TextField(verbose_name='NetCDF files')

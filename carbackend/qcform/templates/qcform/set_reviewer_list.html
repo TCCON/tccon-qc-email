@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TCCON QA/QC Reviewers</title>
+   {% load tz %}
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+</head>
+<body>
+<h1>Editors and reviewers for TCCON sites</h1>
+
+<form action="{% url 'qcform:setreviewers' %}" method="post">
+    {% csrf_token %}
+    {{ formset.management_form }}
+    <table>
+    {% for form in formset %}
+    {{ form.id }}
+    <tr>
+        <td>
+            {% if form.instance.site and not form.site.errors %}
+            <!-- This form in the formset is already populated, so we don't want the site to be editable, but
+                 we still need it submitted with the form. Conversely, if there's an error (usually that this site
+                 already exists) we need it to be editable. -->
+                {{ form.instance.site }}
+                {{ form.site.as_hidden }}
+            {% else %}
+                {{ form.site }}
+            {% endif %}
+        </td>
+        <td>{{ form.editor }}</td>
+        <td>{{ form.reviewer1 }}</td>
+        <td>{{ form.reviewer2 }}</td>
+    </tr>
+    {% if form.errors %}
+    <tr>
+        <td>{{ form.site.errors }}</td>
+        <td>{{ form.editor.errors }}</td>
+        <td>{{ form.reviewer1.errors }}</td>
+        <td>{{ form.reviewer2.errors }}</td>
+    </tr>
+    {% endif %}
+    {% endfor %}
+    </table>
+    <button type="submit">Update</button>
+</form>
+</body>
+</html>

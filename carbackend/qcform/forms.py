@@ -1,6 +1,7 @@
-from django.forms import Form, ModelForm, DateInput, DateField
+from django.forms import Form, ModelForm, DateInput, DateField, modelformset_factory
+from django.core.exceptions import ValidationError
 from django import forms
-from .models import QCReport, ISection
+from .models import QCReport, ISection, SiteReviewers
 from tcconauth import utils
 
 import copy
@@ -14,6 +15,37 @@ class DatePickerWidget(DateInput):
 class DatePickerField(DateField):
     def __init__(self, *args, input_formats=('%Y-%m-%d', '%Y/%m/%d'), **kwargs):
         super().__init__(*args, input_formats=input_formats, **kwargs)
+
+
+class BaseReviewersFormset(forms.BaseModelFormSet):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.queryset = SiteReviewers.objects.order_by('site')
+
+
+class ReviewersForm(forms.ModelForm):
+    class Meta:
+        model = SiteReviewers
+        fields = ['site', 'editor', 'reviewer1', 'reviewer2']
+
+    def clean(self):
+        cleaned_data = super().clean()
+        cd_copy = cleaned_data.copy()
+        import pdb; pdb.set_trace()
+
+        if cd_copy['reviewer1'] == cd_copy['editor']:
+            self.add_error('reviewer1', ValidationError('Reviewer 1 cannot be the same as the editor', 'dup_reviewer'))
+        if cd_copy['reviewer2'] == cd_copy['editor']:
+            self.add_error('reviewer2', ValidationError('Reviewer 2 cannot be the same as the editor', 'dup_reviewer'))
+        if cd_copy['reviewer2'] == cd_copy['reviewer1']:
+            self.add_error('reviewer2', ValidationError('Reviewer 2 cannot be the same as reviewer 1', 'dup_reviewer'))
+
+        return cleaned_data
+
+
+ReviewersFormset = modelformset_factory(SiteReviewers, extra=1, form=ReviewersForm,
+                                        #fields=['site', 'editor', 'reviewer1', 'reviewer2'],
+                                        formset=BaseReviewersFormset)
 
 
 class QcFilterForm(Form):

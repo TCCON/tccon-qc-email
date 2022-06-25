@@ -36,6 +36,15 @@
   </div>
   {% endif %}
 
+  <h2>Other subpages</h2>
+  <p>
+    {% if user.is_staff %}
+    <a href="{% url 'qcform:setreviewers' %}">Change reviewer assignments</a>
+    {% else %}
+    <a href="{% url 'qcform:reviewers' %}">See reviewer assignments</a>
+    {% endif %}
+  </p>
+
   <h2>Filter results</h2>
   {% if is_auth %} <p>Filtering affects both tables of forms (yours and other reviewers), except filtering on reviewer
   will not affect your table.</p> {% endif %}

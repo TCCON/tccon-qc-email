@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TCCON QA/QC Reviewers</title>
+   {% load tz %}
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+</head>
+<body>
+<h1>Editors and reviewers for TCCON sites</h1>
+
+{% if msg %}
+<p><b>{{ msg }}</b></p>
+{% endif %}
+
+<table>
+    <thead><th>Site</th><th>Editor</th><th>Reviewer 1</th><th>Reviewer 2</th></thead>
+    {% for entry in reviewers %}
+    <tr>
+        <td>{{ entry.site }}</td>
+        <td>{{ entry.editor }}</td>
+        <td>{{ entry.reviewer1 }}</td>
+        <td>{{ entry.reviewer2 }}</td>
+    </tr>
+    {% endfor %}
+</table>
+</body>
+</html>

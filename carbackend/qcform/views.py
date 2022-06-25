@@ -1,13 +1,12 @@
 from django.shortcuts import render, reverse, Http404, HttpResponse, HttpResponseRedirect, get_object_or_404
 from django.contrib.auth.models import User
+from django.db import transaction, DatabaseError
 from django.template import loader
 from django.views import View
 
-from. models import QCReport, DraftQcReport
-from .forms import QcReportForm, QcFilterForm
+from. models import QCReport, DraftQcReport, SiteReviewers
+from .forms import QcReportForm, QcFilterForm, ReviewersFormset
 
-from copy import copy
-from datetime import date
 import io
 import re
 import xhtml2pdf.pisa as pisa
@@ -268,3 +267,41 @@ class RenderPdfForm(View):
         response = HttpResponse(pdf, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="{report.reviewer}_{report.site}_{report.modification_time:%Y%m%d}.pdf"'
         return response
+
+
+class ViewEditorsReviewers(View):
+    def get(self, request):
+        reviewer_list = SiteReviewers.objects.order_by('site').all()
+        msg_id = request.GET.get('msg', '')
+        if msg_id == 'success':
+            msg = 'Successfully updated reviewers'
+        else:
+            msg = ''
+        return render(request, 'qcform/reviewer_list.html', context={'reviewers': reviewer_list, 'msg': msg})
+
+
+class SetEditorsReviewers(View):
+    def get(self, request):
+        if not request.user.is_authenticated or not request.user.is_staff:
+            return render(request, 'qcform/403.html', status=403)
+        forms = ReviewersFormset()
+        return render(request, 'qcform/set_reviewer_list.html', context={'formset': forms})
+
+    def post(self, request):
+        if not request.user.is_authenticated or not request.user.is_staff:
+            return render(request, 'qcform/403.html', status=403)
+
+        forms = ReviewersFormset(request.POST)
+        if forms.is_valid():
+            self._update_site_reviewers(forms)
+            url = '{}/?msg=success'.format(reverse('qcform:reviewers').rstrip('?').rstrip('/'))
+            return HttpResponseRedirect(url)
+        else:
+            return render(request, 'qcform/set_reviewer_list.html', context={'formset': forms})
+
+    @staticmethod
+    def _update_site_reviewers(reviewers_form):
+        with transaction.atomic():
+            for form in reviewers_form:
+                form.save()
+
