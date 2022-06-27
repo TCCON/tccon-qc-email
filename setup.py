@@ -1,32 +1,16 @@
-import setuptools
-from numpy.distutils.core import Extension
-
-froll_ext = Extension(name='froll', sources=['fortran/froll.f'])
-
+from setuptools import setup
 
 if __name__ == '__main__':
-    from numpy.distutils.core import setup
     setup(
             name='tccon_qc_email',
             description='Email QA/QC plots of TCCON data to GGGBugs',
             author='Sebastien Roche & Joshua Laughner',
             author_email='sebastien.roche@mail.utoronto.ca; jlaugh@caltech.edu',
             version='1.0.0',
-            url='https://bitbucket.org/rocheseb/tccon_qc_plots/',
+            url='https://github.com/WennbergLab/tccon-qc-email',
             install_requires=[
-                    'matplotlib>=3.3.2',
-                    'netcdf4>=1.5.4',
-                    'numpy',
-                    'pandas',
-                    'pillow',
-                    'pypdf2',
-                    'scipy>=1.6.1',
                     'tomli>=1.0.4'
                 ],
-            packages=['qc_plots'],
-            ext_modules=[froll_ext],
-            entry_points={'console_scripts': [
-                    'qc_plots=qc_plots.__main__:main'
-                ]},
+            packages=['qc_email'],
             python_requires='>=3.7'
     )
