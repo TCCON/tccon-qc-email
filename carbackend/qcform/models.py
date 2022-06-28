@@ -139,6 +139,29 @@ class SiteReviewers(models.Model):
     reviewer2 = models.ForeignKey(User, models.SET_NULL, blank=True, null=True,
                                   limit_choices_to={'groups__name': 'QC Reviewers'}, related_name='+')
 
+    @staticmethod
+    def reviewer_name(user):
+        if user.first_name and user.last_name:
+            return f'{user.first_name} {user.last_name}'
+        else:
+            return user.username
+
+    def editor_name(self):
+        return self.reviewer_name(self.editor)
+
+    def reviewer1_name(self):
+        return self.reviewer_name(self.reviewer1)
+
+    def reviewer2_name(self):
+        return self.reviewer_name(self.reviewer2)
+
+    def site_name(self):
+        name = utils.site_id_to_name.get(self.site, None)
+        if name:
+            return f'{name} ({self.site})'
+        else:
+            return self.site
+
 
 # Create your models here.
 class QCReport(models.Model, ISection):

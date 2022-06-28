@@ -34,7 +34,7 @@
             <!-- This form in the formset is already populated, so we don't want the site to be editable, but
                  we still need it submitted with the form. Conversely, if there's an error (usually that this site
                  already exists) we need it to be editable. -->
-                {{ form.instance.site }}
+                {{ form.instance.site_name }}
                 {{ form.site.as_hidden }}
             {% else %}
                 {{ form.site }}

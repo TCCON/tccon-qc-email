@@ -19,10 +19,7 @@ class DatePickerField(DateField):
 
 class UserChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
-        if obj.first_name and obj.last_name:
-            return f'{obj.first_name} {obj.last_name}'
-        else:
-            return obj.username
+        return SiteReviewers.reviewer_name(obj)
 
 
 class BaseReviewersFormset(forms.BaseModelFormSet):
