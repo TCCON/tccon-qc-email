@@ -11,5 +11,6 @@ urlpatterns = [
     path('deletedraft/<int:draft_id>/', views.DeleteDraft.as_view(), name='deletedraft'),
     path('makepdf/<int:form_id>/', views.RenderPdfForm.as_view(), name='pdf'),
     path('reviewers/', views.ViewEditorsReviewers.as_view(), name='reviewers'),
-    path('setreviewers/', views.SetEditorsReviewers.as_view(), name='setreviewers')
+    path('setreviewers/', views.SetEditorsReviewers.as_view(), name='setreviewers'),
+    path('api/v1/getreviewers/<str:site>', views.GetSiteReviewersApi.as_view(), name='getreviewersapi')
 ]

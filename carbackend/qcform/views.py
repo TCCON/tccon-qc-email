@@ -1,6 +1,7 @@
 from django.shortcuts import render, reverse, Http404, HttpResponse, HttpResponseRedirect, get_object_or_404
 from django.contrib.auth.models import User
 from django.db import transaction, DatabaseError
+from django.http import JsonResponse
 from django.template import loader
 from django.views import View
 
@@ -303,3 +304,48 @@ class SetEditorsReviewers(View):
             return 'Successfully updated reviewers'
         else:
             return ''
+
+
+class GetSiteReviewersApi(View):
+    def get(self, request, site=None):
+        if site:
+            reviewers = self.get_site_reviewers(site)
+        else:
+            reviewers = self.get_all_reviewers()
+
+        return JsonResponse(reviewers, status=200)
+
+    @classmethod
+    def row_to_dict(cls, r):
+        return {
+            'editor': cls.user_to_string(r.editor),
+            'reviewer1': cls.user_to_string(r.reviewer1),
+            'reviewer2': cls.user_to_string(r.reviewer2),
+        }
+
+
+    @staticmethod
+    def user_to_string(user):
+        username = user.username
+        firstname = user.first_name
+        lastname = user.last_name
+        if firstname and lastname:
+            return f'{firstname} {lastname}'
+        else:
+            return username
+
+    @classmethod
+    def get_all_reviewers(cls):
+        rows = SiteReviewers.objects.all()
+        return {r.site: cls.row_to_dict(r) for r in rows}
+
+    @classmethod
+    def get_site_reviewers(cls, site):
+        row = SiteReviewers.objects.get(site=site)
+        return cls.row_to_dict(row)
+
+    @classmethod
+    def reviewers_as_json(cls, site=None):
+        
+
+        print(json.dumps(reviewers))
