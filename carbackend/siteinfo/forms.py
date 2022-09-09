@@ -872,3 +872,100 @@ class ReleaseFlagUpdateForm(Form):
     def update_flag_file(flag_dict):
         utils.backup_file_rolling(settings.RELEASE_FLAGS_FILE)
         InfoFileLocks.write_json_file(settings.RELEASE_FLAGS_FILE, flag_dict, indent=4)
+
+
+# ============ #
+# Bibtex forms #
+# ============ #
+_author_help_text = ('Provide the list of authors following the format: "Last, Given and Last, Given '
+                     'and" etc. Individual authors must be separated by "and", given names may be '
+                     'spelled out or initialized as desired. Example: "Laughner, Joshua Lee and '
+                     'Roehl, Coleen M." would be valid, as would "Laughner, J.L. and Roehl, C.M."')
+
+_title_help_text = 'The {kind} title. For subscripts as in CO2, use Latex math notation, e.g. "CO$_2$".'
+_year_help_text = 'Year of publication'
+_doi_help_text = ('Digital object identifier for this paper starting with the "10.", '
+                  'e.g. "10.1029/2006JD007154". Optional, but strongly recommended if available.')
+
+
+class BibtexFormMixin:
+    @classmethod
+    def get_form_instances_as_list(cls, initial=None):
+        return [c(initial=initial) for c in cls.__subclasses__()]
+
+    @classmethod
+    def get_form_instances_as_bibtex_type_dict(cls, initial=None):
+        instances = cls.get_form_instances_as_list(initial)
+        return {i.bibtex_type: i for i in instances}
+
+    @classmethod
+    def get_form_instances_as_dropdown_type_dict(cls, initial=None):
+        instances = cls.get_form_instances_as_list(initial)
+        return {i.dropdown_type: i for i in instances}
+
+    @classmethod
+    def get_bibtex_dropdown_dict(cls):
+        classes = cls.__subclasses__()
+        return {c.bibtex_type: c.dropdown_type for c in classes}
+
+
+class BibtexJournal(Form, BibtexFormMixin):
+    bibtex_type = 'article'
+    dropdown_type = 'journal'
+
+    author = forms.CharField(required=True, label='Authors', help_text=_author_help_text)
+    title = forms.CharField(required=True, help_text=_title_help_text.format(kind='article'))
+    journal = forms.CharField(required=True, label='Journal Abbreviation',
+                              help_text='The official abbreviation for the journal, e.g. "Atmos. Meas. Tech."')
+    year = forms.CharField(required=True, help_text=_year_help_text)
+    volume = forms.CharField(required=True, help_text='Volume of the journal this article was published in.')
+    number = forms.CharField(required=False, help_text='Issue within a volume this article was published in. Optional.')
+    pages = forms.CharField(required=True, help_text='Page numbers of the article, given as "start--end", or an '
+                                                     'electronic page ID for online-only journals.')
+    doi = forms.CharField(required=False, help_text=_doi_help_text)
+
+
+class BibtexBook(Form, BibtexFormMixin):
+    bibtex_type = 'book'
+    dropdown_type = 'book'
+
+    author = forms.CharField(required=True, label='Authors', help_text=_author_help_text)
+    title = forms.CharField(required=True, help_text=_title_help_text.format(kind='book'))
+    publisher = forms.CharField(required=True, help_text="Name of the book's publisher")
+    address = forms.CharField(required=False, label='Publisher address',
+                              help_text='General address of the publisher, e.g. "New York, NY, USA". If there are '
+                                        'multiple, choose one. This field is optional.')
+    year = forms.CharField(required=True, help_text=_year_help_text)
+    doi = forms.CharField(required=False, help_text=_doi_help_text)
+
+
+class BibtexBookSection(Form, BibtexFormMixin):
+    bibtex_type = 'inbook'
+    dropdown_type = 'book section'
+
+    author = forms.CharField(required=True, label='Authors', help_text=_author_help_text)
+    title = forms.CharField(required=True, label='Section title', help_text=_title_help_text.format(kind='section in the book'))
+    booktitle = forms.CharField(required=True, label='Book title', help_text=_title_help_text.format(kind='book itself'))
+    publisher = forms.CharField(required=True, help_text="Name of the book's publisher")
+    address = forms.CharField(required=False, label='Publisher address',
+                              help_text='General address of the publisher, e.g. "New York, NY, USA". If there are '
+                                        'multiple, choose one. This field is optional.')
+    year = forms.CharField(required=True, help_text=_year_help_text)
+    pages = forms.CharField(required=True, help_text='Page numbers of the section, given as "start--end".')
+    doi = forms.CharField(required=False, help_text=_doi_help_text)
+
+
+class BibtexMisc(Form, BibtexFormMixin):
+    bibtex_type = 'misc'
+    dropdown_type = 'other'
+
+    author = forms.CharField(required=True, label='Authors', help_text=_author_help_text)
+    title = forms.CharField(required=True, label='Section title', help_text=_title_help_text.format(kind='citation'))
+    year = forms.CharField(required=True, help_text=_year_help_text)
+    doi = forms.CharField(required=False, help_text=_doi_help_text)
+    howaccessed = forms.CharField(required=False, label='How accessed',
+                                  help_text='Information on how someone can access this citation, often a URL. If a '
+                                            'DOI is not available, including this is recommended but optional.')
+    note = forms.CharField(required=False, help_text='Extra information about this citation, such as when it was '
+                                                     'accessed (if an online source) or where and when it was '
+                                                     'presented at (if a presentation).')

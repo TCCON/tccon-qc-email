@@ -182,7 +182,7 @@ class EditSiteInfo(View):
         site_doi_form = self._get_site_doi_form(request.user, site_id, post_data=request.POST)
         doi_formsets = self._make_doi_formset_dict(request, site_id, with_post=True)
 
-        # Only submit changes if all of the various forms are valid
+        # Only submit changes if all the various forms are valid
         # import pdb; pdb.set_trace()
         if netcdf_form.is_valid() and site_doi_form.is_valid() and all(fs.is_valid() for fs in doi_formsets.values()):
             updated_site_info = self._save_netcdf_metadata(request, netcdf_form, site_id)
@@ -501,6 +501,27 @@ class EditReleaseFlags(View):
                 if key_n > n:
                     n = key_n
         return str(n + 1)
+
+
+class EditBibtexCitation(View):
+    _citation_names = {'siteref': 'site reference', 'dataref': 'data reference'}
+
+    def get(self, request, site_id, citation):
+        user = request.user
+        if not _can_edit_site(user, site_id):
+            return _redirect_for_lack_of_permission(request, site_id, f'{citation} bibtex')
+
+        context = {
+            'site_id': site_id,
+            'citation': citation,
+            'citation_name': self._citation_names.get(citation, citation),
+            'form_types': forms.BibtexFormMixin.get_form_instances_as_bibtex_type_dict(),
+            'form_type_mapping': forms.BibtexFormMixin.get_bibtex_dropdown_dict()
+        }
+
+        print(context['form_types'].keys())
+
+        return render(request, 'siteinfo/edit_bibtex.html', context=context)
 
 
 def _can_edit_site(user, site_id):

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit {{ citation_name }} BibTeX for {{ site_id }}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/opstat.css' %}">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="{% static 'js/bibtex.js' %}"></script>
+    <script type='text/javascript'>
+        $(document).ready(function() {
+            console.log('Ready');
+            var type_select = document.getElementById("citation_type");
+            changeFormType(type_select.value);
+        });
+    </script>
+</head>
+<body>
+
+    <label for="citation_type">Choose the citation type</label>
+    <select name="citation_type" id="citation_type" onchange="changeFormType(this.value)">
+        {% for bibtype, ddtype in form_type_mapping.items %}
+        <option value="{{ bibtype }}">{{ ddtype|capfirst }}</option>
+        {% endfor %}
+    </select>
+
+    {% for bibtype, form in form_types.items %}
+    <div class="bibtex-form" id="bibtex-form-{{bibtype}}">
+        <h2>{{ form.dropdown_type | capfirst }}</h2>
+        <form action="{% url 'siteinfo:editbib' citation site_id %}" method="post">
+            {% csrf_token %}
+            <table class="pretty-table form-table">
+                {{ form.as_table }}
+            </table>
+
+            <br>
+            <div class="cr">
+            <button type="submit" class="link-button">Submit changes</button>
+            </div>
+        </form>
+    </div>
+    {% endfor %}
+
+</body>
+</html>

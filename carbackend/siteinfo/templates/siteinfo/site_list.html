@@ -19,8 +19,8 @@
 
     <table class="pretty-table">
         {% if has_sites %}
-        <tr><th colspan="4">Your sites</th></tr>
-        <tr><th>Site ID</th><th>Site Name</th><th>Public metadata</th><th>Release flags</th></tr>
+        <tr><th colspan="5">Your sites</th></tr>
+        <tr><th>Site ID</th><th>Site Name</th><th>Public metadata</th><th>BibTeX citations</th><th>Release flags</th></tr>
         {% for site in sites_can_edit %}
         <tr>
             <td>{{ site.id }}</td>
@@ -29,6 +29,10 @@
             <td class="centered">
                 <form action="{% url 'siteinfo:view' site.id %}"><button type="submit" class="link-button">View</button></form>
                 <form action="{% url 'siteinfo:edit' site.id %}"><button type="submit" class="link-button">Edit</button></form>
+            </td>
+            <td>
+                <form action="{% url 'siteinfo:editbib' site.id 'siteref'%}"><button type="submit" class="link-button">Site reference</button></form>
+                <form action="{% url 'siteinfo:editbib' site.id 'dataref'%}"><button type="submit" class="link-button">Data reference</button></form>
             </td>
             <td class="centered">
                 <form action="{% url 'siteinfo:flags' site.id %}">
