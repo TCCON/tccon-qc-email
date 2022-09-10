@@ -210,7 +210,7 @@ class EditSiteInfo(View):
             setattr(update, field, site_info[field])
 
         with transaction.atomic():
-            self._write_site_info(update, site_id)
+            self.write_site_info(update, site_id)
             update.save()  # UNDO
 
         return update
@@ -295,11 +295,33 @@ class EditSiteInfo(View):
             return formset_cls(post_data, initial=creators_list)
 
     @staticmethod
-    def _write_site_info(update, site_id):
+    def write_site_info(update, site_id, selective_keys=False):
+        """Write an update to the site information file
+
+        Parameters
+        ----------
+        update: model instance or dict
+            The type of this depends on the value of ``selective_keys``. If that is ``False`` this must be a model
+            object returned by a form's ``save`` method. If that is ``True``, this must be a dictionary. This contains
+            the new values for the site information.
+
+        site_id: str
+            The two-letter site ID.
+
+        selective_keys: bool
+            Controls how ``update`` is interpreted. When this is ``False``, ``update`` must be a model object, and all
+            the standard fields for a site info update are copied from it into the file. When this is ``True``,
+            ``update`` must be a dictionary and only standard keys present in ``update`` are copied.
+        """
         all_site_info = InfoFileLocks.read_json_file(settings.SITE_INFO_FILE)
         site_info = all_site_info.setdefault(site_id, dict())
-        for key in SiteInfoUpdate.standard_fields():
-            site_info[key] = str(getattr(update, key))
+        if selective_keys:
+            for key in SiteInfoUpdate.standard_fields():
+                if key in update:
+                    site_info[key] = str(update[key])
+        else:
+            for key in SiteInfoUpdate.standard_fields():
+                site_info[key] = str(getattr(update, key))
 
         utils.backup_file_rolling(settings.SITE_INFO_FILE)
         InfoFileLocks.write_json_file(settings.SITE_INFO_FILE, all_site_info, indent=4)
@@ -315,6 +337,13 @@ class EditSiteInfo(View):
         fixed_values = {f: {'value': site_info[f], 'name': self._pretty_name(f)} for f in fixed_fields}
         std_fixed_fields = SiteInfoUpdateForm.fixed_fields()
 
+        bibtex_fields = netcdf_form.bibtex_fields()
+        bibtex_values = {f: {
+            'value': site_info[f],
+            'name': self._pretty_name(f),
+            'url': reverse('siteinfo:editbib', kwargs={'site_id': site_id, 'citation': forms.BibtexFormMixin.get_url_part_for_field_name(f)})
+        } for f in bibtex_fields}
+
         if is_post:
             nc_invalid = not netcdf_form.is_valid()
             sd_invalid = not site_doi_form.is_valid()
@@ -328,6 +357,7 @@ class EditSiteInfo(View):
             'netcdf_form': netcdf_form,
             'site_doi_form': site_doi_form,
             'fixed_values': fixed_values,
+            'bibtex_values': bibtex_values,
             'std_fixed_fields': {'n': len(std_fixed_fields), 'fields': utils.grammatical_join(std_fixed_fields)},
             'long_name': site_info.get('long_name', '??'),
             'site_id': site_id,
@@ -504,15 +534,12 @@ class EditReleaseFlags(View):
 
 
 class EditBibtexCitation(View):
-    _citation_names = {'siteref': 'site reference', 'dataref': 'data reference'}
-
     def get(self, request, site_id, citation):
         user = request.user
         if not _can_edit_site(user, site_id):
             return _redirect_for_lack_of_permission(request, site_id, f'{citation} bibtex')
 
         context = self._make_context(request, site_id, citation, is_post=False)
-        import pdb; pdb.set_trace()
         return render(request, 'siteinfo/edit_bibtex.html', context=context)
 
     def post(self, request, site_id, citation):
@@ -520,13 +547,12 @@ class EditBibtexCitation(View):
         if not _can_edit_site(user, site_id):
             return _redirect_for_lack_of_permission(request, site_id, f'{citation} bibtex')
 
-        import pdb; pdb.set_trace()
         bound_forms = forms.BibtexFormMixin.get_form_instances_as_bibtex_type_dict(request.POST)
         bibtex_type = request.POST['type_field']
 
         if bound_forms[bibtex_type].is_valid():
-            json_dict = forms.BibtexFormMixin.instance_to_dict(bound_forms[bibtex_type])
-            print(json_dict)
+            text_citation = request.POST[f'{bibtex_type}-text-citation']
+            self._save_citation(site_id, citation, bound_forms[bibtex_type], text_citation)
             url = '{}/?msg=success'.format(reverse('siteinfo:view', args=(site_id,)).rstrip('?').rstrip('/'))
             return HttpResponseRedirect(url)
         else:
@@ -536,15 +562,28 @@ class EditBibtexCitation(View):
             return render(request, 'siteinfo/edit_bibtex.html', context=context)
 
     def _make_context(self, request, site_id, citation, is_post):
-        data = request.POST if is_post else None
+        if is_post:
+            data = request.POST
+            initial = None
+        else:
+            data = None
+            initial = forms.BibtexFormMixin.load_citation_dict(citation_type=citation, site_id=site_id)
         return {
             'site_id': site_id,
             'citation': citation,
-            'citation_name': self._citation_names.get(citation, citation),
-            'form_types': forms.BibtexFormMixin.get_form_instances_as_bibtex_type_dict(data=data),
+            'citation_name': forms.BibtexFormMixin.citation_names.get(citation, citation),
+            'form_types': forms.BibtexFormMixin.get_form_instances_as_bibtex_type_dict(data=data, initial=initial),
             'form_type_mapping': forms.BibtexFormMixin.get_bibtex_dropdown_dict(),
             'text_citation_url': request.build_absolute_uri(reverse('siteinfo:textcite').rstrip('?'))
         }
+
+    @staticmethod
+    def _save_citation(site_id, citation_type, citation_form, text_citation):
+        forms.BibtexFormMixin.save_form_result(citation_type, site_id, citation_form)
+        site_info_keys = forms.BibtexFormMixin.site_info_keys
+        if citation_type in site_info_keys:
+            update = {site_info_keys[citation_type]: text_citation}
+            EditSiteInfo.write_site_info(update, site_id, selective_keys=True)
 
 
 class GenTextCitation(View):

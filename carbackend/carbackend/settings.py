@@ -320,6 +320,9 @@ if VM == Vms.TCCONDATA:
     # by the Django process
     METADATA_DIR = Path('/var/www/tccon-metadata/doi-metadata')
 
+    # This is the path where the JSONs with BibTeX versions of the site and data citations (at least) are stored.
+    BIBTEX_DIR = Path('/var/www/tccon-metadata/bibtex')
+
     # This is the path to a .json file that specifies certain configuration elements that we might want to
     # change without having to reload the Django process, such as the point of contact and the maximum release
     # lag.
@@ -337,6 +340,7 @@ else:
     SITE_INFO_FILE = BASE_DIR / 'site_info.json'
     RELEASE_FLAGS_FILE = BASE_DIR / 'release_flags.json'
     RELEASE_FLAGS_DEF_FILE = BASE_DIR / 'release_flag_definitions.json'
+    BIBTEX_DIR = BASE_DIR / 'bibtex'
     RUNTIME_SETTINGS_FILE = BASE_DIR / 'metadata_config.json'
     FLAG_PLOT_DIRECTORY = None
     FLAG_PLOT_URL = None

@@ -21,13 +21,15 @@ class SiteInfoUpdateForm(ModelForm):
         model = SiteInfoUpdate
         fields = ['release_lag',
                   'location',
-                  'contact',
-                  'site_reference',
-                  'data_reference']
+                  'contact']
 
     @classmethod
     def fixed_fields(cls):
         return tuple(f for f in SiteInfoUpdate.standard_fields() if f not in cls.Meta.fields)
+
+    @classmethod
+    def bibtex_fields(cls):
+        return 'site_reference', 'data_reference'
 
     # def save(self, user, site_info, commit=True):
     #     data = self.cleaned_data
@@ -55,9 +57,7 @@ class SiteInfoUpdateStaffForm(SiteInfoUpdateForm):
                   'data_revision',
                   'release_lag',
                   'location',
-                  'contact',
-                  'site_reference',
-                  'data_reference']
+                  'contact']
         widgets = {
             'data_doi': TextInput()
         }
@@ -891,9 +891,18 @@ _url_help_text = 'A URL where the citation may be accessed. Optional.'
 
 
 class BibtexFormMixin:
+    citation_names = {'siteref': 'site reference', 'dataref': 'data reference'}
+    site_info_keys = {'siteref': 'site_reference', 'dataref': 'data_reference'}
+
     @classmethod
-    def get_form_instances_as_list(cls, data=None):
-        instances = [c(data) for c in cls.__subclasses__()]
+    def get_url_part_for_field_name(cls, field_name):
+        for k, v in cls.site_info_keys.items():
+            if v == field_name:
+                return k
+
+    @classmethod
+    def get_form_instances_as_list(cls, data=None, initial=None, site_id=None):
+        instances = [c(data, initial=initial) for c in cls.__subclasses__()]
         for inst in instances:
             for key, field in inst.fields.items():
                 if key != 'type_field':
@@ -902,13 +911,13 @@ class BibtexFormMixin:
         return instances
 
     @classmethod
-    def get_form_instances_as_bibtex_type_dict(cls, data=None):
-        instances = cls.get_form_instances_as_list(data)
+    def get_form_instances_as_bibtex_type_dict(cls, data=None, initial=None):
+        instances = cls.get_form_instances_as_list(data=data, initial=initial)
         return {i.bibtex_type: i for i in instances}
 
     @classmethod
-    def get_form_instances_as_dropdown_type_dict(cls, data=None):
-        instances = cls.get_form_instances_as_list(data)
+    def get_form_instances_as_dropdown_type_dict(cls, data=None, initial=None):
+        instances = cls.get_form_instances_as_list(data=data, initial=initial)
         return {i.dropdown_type: i for i in instances}
 
     @classmethod
@@ -932,6 +941,35 @@ class BibtexFormMixin:
                 key = field
             dict_out[key] = instance[field].value()
         return dict_out
+
+    @classmethod
+    def save_form_result(cls, citation_type, site_id, form):
+        bibtex_dir = settings.BIBTEX_DIR
+        if not bibtex_dir.exists():
+            bibtex_dir.mkdir()
+
+        # Read the existing citation file for this site, if it exists.
+        site_file = bibtex_dir / f'{site_id}_bibtex_citations.json'
+        if site_file.exists():
+            citations_json = InfoFileLocks.read_json_file(site_file)
+        else:
+            citations_json = dict()
+
+        citations_json[citation_type] = cls.instance_to_dict(form)
+        InfoFileLocks.write_json_file(site_file, citations_json, indent=2)
+
+    @classmethod
+    def load_citation_dict(cls, citation_type, site_id):
+        bibtex_dir = settings.BIBTEX_DIR
+        if not bibtex_dir.exists():
+            return dict()
+
+        site_file = bibtex_dir / f'{site_id}_bibtex_citations.json'
+        if not site_file.exists():
+            return dict()
+
+        citations_json = InfoFileLocks.read_json_file(site_file)
+        return citations_json.get(citation_type, dict())
 
     def text_citation(self):
         raise NotImplementedError('Cannot produce a citation for the mixin type')

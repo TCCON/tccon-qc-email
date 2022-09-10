@@ -21,7 +21,8 @@
     </script>
 </head>
 <body>
-
+    <h1>Edit {{ citation_name }} BibTeX for {{ site_id }}</h1>
+    <div id="div-form-wrap">
     <label for="citation_type">Choose the citation type</label>
     <select name="citation_type" id="citation_type" onchange="changeFormType(this.value)">
         {% for bibtype, ddtype in form_type_mapping.items %}
@@ -57,6 +58,6 @@
         </form>
     </div>
     {% endfor %}
-
+    </div>
 </body>
 </html>

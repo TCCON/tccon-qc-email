@@ -175,6 +175,22 @@
 
             {{ netcdf_form.as_table }}
 
+            <tr><td colspan="2" class="header">
+                The following fields are stored as BibTeX citations to enable auto-generating site citations. You will
+                need to enter the BibTeX information on a separate page. Note that the citation on this page will not
+                update until you refresh it.
+            </td></tr>
+
+            {% for field, info in bibtex_values.items %}
+            <tr>
+                <th>{{ info.name }}</th>
+                <td>
+                    {{ info.value }}<br>
+                    <a href="{{ info.url }}" target="_blank" rel="noopener noreferrer">Edit BibTeX (new tab)</a>
+                </td>
+            </tr>
+            {% endfor %}
+
         </table>
 
         <br>
