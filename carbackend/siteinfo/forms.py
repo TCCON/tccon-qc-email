@@ -944,32 +944,51 @@ class BibtexFormMixin:
 
     @classmethod
     def save_form_result(cls, citation_type, site_id, form):
-        bibtex_dir = settings.BIBTEX_DIR
-        if not bibtex_dir.exists():
-            bibtex_dir.mkdir()
-
         # Read the existing citation file for this site, if it exists.
-        site_file = bibtex_dir / f'{site_id}_bibtex_citations.json'
+        site_file = cls.get_site_file(site_id)
         if site_file.exists():
             citations_json = InfoFileLocks.read_json_file(site_file)
         else:
             citations_json = dict()
 
-        citations_json[citation_type] = cls.instance_to_dict(form)
+        if not isinstance(form, dict):
+            form_dict = cls.instance_to_dict(form)
+        else:
+            form_dict = form
+        citations_json[citation_type] = form_dict
         InfoFileLocks.write_json_file(site_file, citations_json, indent=2)
 
     @classmethod
     def load_citation_dict(cls, citation_type, site_id):
-        bibtex_dir = settings.BIBTEX_DIR
-        if not bibtex_dir.exists():
-            return dict()
-
-        site_file = bibtex_dir / f'{site_id}_bibtex_citations.json'
+        site_file = cls.get_site_file(site_id)
         if not site_file.exists():
             return dict()
 
         citations_json = InfoFileLocks.read_json_file(site_file)
         return citations_json.get(citation_type, dict())
+
+    @classmethod
+    def update_data_revision(cls, site_id, new_rev):
+        # NB: there is logic to update the site info text citation in the EditSiteInfo view as well
+        site_dict = cls.load_citation_dict('dataref', site_id)
+        if len(site_dict) == 0:
+            # JSON probably doesn't exist yet
+            return
+
+        # Assume that somewhere in the title is a "GGG20xxRn" string where the Rn needs updated, and
+        old_title = site_dict.get('title', '')
+        site_dict['title'] = re.sub(r'(GGG20\d\d)R\d+', rf'\1{new_rev}', old_title)
+        old_doi = site_dict.get('doi', '')
+        site_dict['doi'] = re.sub(r'R\d+$', new_rev, old_doi)
+        cls.save_form_result('dataref', site_id, site_dict)
+
+    @classmethod
+    def get_site_file(cls, site_id):
+        bibtex_dir = settings.BIBTEX_DIR
+        if not bibtex_dir.exists():
+            return dict()
+
+        return bibtex_dir / f'{site_id}_bibtex_citations.json'
 
     def text_citation(self):
         raise NotImplementedError('Cannot produce a citation for the mixin type')

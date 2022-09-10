@@ -195,6 +195,14 @@
 
         <br>
 
+        {% if can_edit_all %}
+        <label for="auto-update-rev">Propagate revision number:</label>
+        <input type="checkbox" id="auto-update-rev" name="auto-update-rev" value="do_update" checked><br>
+        <i>By default, this will try to update the DOI and data reference if the data revision changes.
+        Uncheck to disable that. Note: do check that this works correctly, as it assumes certain formats
+        for both!</i>
+        {% endif %}
+
         <h2>DOI metadata</h2>
         <p>The metadata below is only contained in the DOI record for your site. Hover over the blue question mark icons for help on the different fields. Here are common ROR IDs you might need:</p>
 

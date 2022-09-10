@@ -182,10 +182,13 @@ class EditSiteInfo(View):
         site_doi_form = self._get_site_doi_form(request.user, site_id, post_data=request.POST)
         doi_formsets = self._make_doi_formset_dict(request, site_id, with_post=True)
 
+        # this will be the string "do_update" if checked and None if not, so treating it like a bool works fine
+        auto_update_rev = request.POST.get('auto-update-rev')
+        do_auto_update = auto_update_rev and 'data_revision' in netcdf_form.changed_data
+
         # Only submit changes if all the various forms are valid
-        # import pdb; pdb.set_trace()
         if netcdf_form.is_valid() and site_doi_form.is_valid() and all(fs.is_valid() for fs in doi_formsets.values()):
-            updated_site_info = self._save_netcdf_metadata(request, netcdf_form, site_id)
+            updated_site_info = self._save_netcdf_metadata(request, netcdf_form, site_id, auto_update_rev=do_auto_update)
             self._save_doi_metadata(request, updated_site_info, site_doi_form, doi_formsets, site_id)
             url = '{}/?msg=success'.format(reverse('siteinfo:view', args=(site_id,)).rstrip('?').rstrip('/'))
             return HttpResponseRedirect(url)
@@ -200,14 +203,32 @@ class EditSiteInfo(View):
             )
             return render(request, 'siteinfo/edit_site_info.html', context=context)
 
-    def _save_netcdf_metadata(self, request, form, site_id):
-        # form.save(user=request.user, site_info=self._get_site_info(site_id))
+    def _save_netcdf_metadata(self, request, form, site_id, auto_update_rev=False):
+
+        if auto_update_rev:
+            # This must go first so that the citation is updated before we read the site info
+            new_rev = form['data_revision'].value()
+            forms.BibtexFormMixin.update_data_revision(site_id, new_rev)
+
         site_info = _get_site_info(site_id)
         update = form.save(commit=False)
         update.user_updated = request.user
         update.site_id = site_id
         for field in form.fixed_fields():
             setattr(update, field, site_info[field])
+        if auto_update_rev:
+            update.data_doi = re.sub(r'R\d+$', new_rev, update.data_doi)
+            # Update the reference here rather than regenerate from the BibTeX - that way if the user customized the
+            # text citation, we keep that.
+            old_citation = update.data_reference
+            # Assume that there is a GGG20xxRn somewhere in the citation that needs updated
+            new_citation = re.sub(r'(GGG20\d\d)R\d+', rf'\1{new_rev}', old_citation)
+            # And that the doi has something like "tccon.ggg2020.pasadena01.R0" or "tccon.ggg2020.1.pasadena01.R0"
+            # in it
+            new_citation = re.sub(r'(tccon\.ggg20\d\d(\.\d+)?\.\w+\.)R\d+', rf'\1{new_rev}', new_citation)
+            update.data_reference = new_citation
+            # Finally pass the revision to the BibTeX manager to keep that up-to-date as well
+            forms.BibtexFormMixin.update_data_revision(site_id, new_rev=new_rev)
 
         with transaction.atomic():
             self.write_site_info(update, site_id)
@@ -229,8 +250,8 @@ class EditSiteInfo(View):
 
     @staticmethod
     def _get_netcdf_form(user, site_id, post_data=None):
+        site_info = _get_site_info(site_id)
         if post_data is None:
-            site_info = _get_site_info(site_id)
             if _can_edit_all_site_info(user, site_id):
                 return SiteInfoUpdateStaffForm(initial=site_info)
             elif _can_edit_site(user, site_id):
@@ -239,9 +260,9 @@ class EditSiteInfo(View):
                 raise Http404('Sorry, you cannot access the information form for site "{}"'.format(site_id))
         else:
             if _can_edit_all_site_info(user, site_id):
-                return SiteInfoUpdateStaffForm(post_data)
+                return SiteInfoUpdateStaffForm(post_data, initial=site_info)
             elif _can_edit_site(user, site_id):
-                return SiteInfoUpdateForm(post_data)
+                return SiteInfoUpdateForm(post_data, initial=site_info)
             else:
                 raise Http404('Sorry, you cannot access the information form for site "{}"'.format(site_id))
 
