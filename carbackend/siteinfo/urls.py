@@ -10,5 +10,6 @@ urlpatterns = [
     path('editflags/<str:site_id>/<str:flag_id>/', views.EditReleaseFlags.as_view(), name='editflags'),
     path('deleteflags/<str:site_id>/<str:flag_id>/', views.DeleteReleaseFlags.as_view(), name='deleteflags'),
     path('editbib/<str:site_id>/<str:citation>/', views.EditBibtexCitation.as_view(), name='editbib'),
+    path('textcitation/', views.GenTextCitation.as_view(), name='textcite'),
     path('permission/', views.MissingPermission.as_view(), name='missingperm')
 ]

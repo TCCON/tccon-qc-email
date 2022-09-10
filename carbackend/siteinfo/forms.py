@@ -1,8 +1,9 @@
 import json
+from bibtexparser.customization import splitname as splitbibname
 
 from django.conf import settings
 from django import forms
-from django.forms import ModelForm, Form, FileField, TextInput
+from django.forms import ModelForm, Form, FileField, TextInput, widgets
 from django.forms import formset_factory
 from .models import SiteInfoUpdate, InfoFileLocks
 from . import utils
@@ -886,21 +887,28 @@ _title_help_text = 'The {kind} title. For subscripts as in CO2, use Latex math n
 _year_help_text = 'Year of publication'
 _doi_help_text = ('Digital object identifier for this paper starting with the "10.", '
                   'e.g. "10.1029/2006JD007154". Optional, but strongly recommended if available.')
+_url_help_text = 'A URL where the citation may be accessed. Optional.'
 
 
 class BibtexFormMixin:
     @classmethod
-    def get_form_instances_as_list(cls, initial=None):
-        return [c(initial=initial) for c in cls.__subclasses__()]
+    def get_form_instances_as_list(cls, data=None):
+        instances = [c(data) for c in cls.__subclasses__()]
+        for inst in instances:
+            for key, field in inst.fields.items():
+                if key != 'type_field':
+                    field.widget.attrs['onchange'] = f'lockSubmitButton("{inst.bibtex_type}");'
+
+        return instances
 
     @classmethod
-    def get_form_instances_as_bibtex_type_dict(cls, initial=None):
-        instances = cls.get_form_instances_as_list(initial)
+    def get_form_instances_as_bibtex_type_dict(cls, data=None):
+        instances = cls.get_form_instances_as_list(data)
         return {i.bibtex_type: i for i in instances}
 
     @classmethod
-    def get_form_instances_as_dropdown_type_dict(cls, initial=None):
-        instances = cls.get_form_instances_as_list(initial)
+    def get_form_instances_as_dropdown_type_dict(cls, data=None):
+        instances = cls.get_form_instances_as_list(data)
         return {i.dropdown_type: i for i in instances}
 
     @classmethod
@@ -908,10 +916,73 @@ class BibtexFormMixin:
         classes = cls.__subclasses__()
         return {c.bibtex_type: c.dropdown_type for c in classes}
 
+    @classmethod
+    def form_from_post(cls, post_data):
+        bibtex_type = post_data['type_field']
+        instances = cls.get_form_instances_as_bibtex_type_dict(post_data)
+        return instances[bibtex_type]
+
+    @classmethod
+    def instance_to_dict(cls, instance: Form):
+        dict_out = dict()
+        for field in instance.fields.keys():
+            if field == 'type_field':
+                key = 'bibtex_type'
+            else:
+                key = field
+            dict_out[key] = instance[field].value()
+        return dict_out
+
+    def text_citation(self):
+        raise NotImplementedError('Cannot produce a citation for the mixin type')
+
+    def get_text_value(self, key, default=''):
+        value = self[key].value()
+        if value is None:
+            return default
+
+        if value:
+            self.any_values = True
+        return value
+
+    @staticmethod
+    def format_authors(authors: str):
+        def join_part(part, leading_space=True, sep=' '):
+            if len(part) == 0:
+                return ''
+
+            joined = sep.join(part)
+            if leading_space:
+                return f' {joined}'
+            else:
+                return joined
+
+        if not authors:
+            return ''
+
+        authors = [splitbibname(a, strict_mode=False) for a in authors.split('and')]
+        for i, author in enumerate(authors):
+            if i == 0:
+                first = join_part(author['first'])
+                von = join_part(author['von'], leading_space=False)
+                last = join_part(author['last'], leading_space=len(von) > 0)
+                suffix = join_part(author['jr'])
+                authors[i] = f'{von}{last}{suffix},{first}'
+            else:
+                first = join_part(author['first'], leading_space=False)
+                von = join_part(author['von'])
+                last = join_part(author['last'])
+                suffix = join_part(author['jr'])
+                authors[i] = f'{first}{von}{last}{suffix}'
+
+        return utils.grammatical_join(authors)
+
 
 class BibtexJournal(Form, BibtexFormMixin):
     bibtex_type = 'article'
     dropdown_type = 'journal'
+
+    type_field = forms.CharField(widget=widgets.HiddenInput(), initial=bibtex_type)
 
     author = forms.CharField(required=True, label='Authors', help_text=_author_help_text)
     title = forms.CharField(required=True, help_text=_title_help_text.format(kind='article'))
@@ -923,11 +994,38 @@ class BibtexJournal(Form, BibtexFormMixin):
     pages = forms.CharField(required=True, help_text='Page numbers of the article, given as "start--end", or an '
                                                      'electronic page ID for online-only journals.')
     doi = forms.CharField(required=False, help_text=_doi_help_text)
+    url = forms.CharField(required=False, help_text=_url_help_text)
+
+    def text_citation(self):
+        self.any_values = False
+
+        authors = self.format_authors(self.get_text_value('author'))
+        title = self.get_text_value('title')
+        journal = self.get_text_value('journal')
+        year = self.get_text_value('year')
+        volume = self.get_text_value('volume')
+        number = self.get_text_value('number')
+        if number:
+            number = f' {number}'
+        pages = self.get_text_value('pages')
+        doi = self.get_text_value('doi')
+        if doi:
+            doi = f' doi: {doi}.'
+        url = self.get_text_value('url')
+        if url:
+            url = f' Available from: {url}.'
+
+        if not self.any_values:
+            return ''
+        else:
+            return f'{authors} ({year}). "{title}". {journal}, {volume}{number}, {pages}.{doi}{url}'
 
 
 class BibtexBook(Form, BibtexFormMixin):
     bibtex_type = 'book'
     dropdown_type = 'book'
+
+    type_field = forms.CharField(widget=widgets.HiddenInput(), initial=bibtex_type)
 
     author = forms.CharField(required=True, label='Authors', help_text=_author_help_text)
     title = forms.CharField(required=True, help_text=_title_help_text.format(kind='book'))
@@ -937,11 +1035,36 @@ class BibtexBook(Form, BibtexFormMixin):
                                         'multiple, choose one. This field is optional.')
     year = forms.CharField(required=True, help_text=_year_help_text)
     doi = forms.CharField(required=False, help_text=_doi_help_text)
+    url = forms.CharField(required=False, help_text=_url_help_text)
+
+    def text_citation(self):
+        self.any_values = False
+
+        authors = self.format_authors(self.get_text_value('author'))
+        title = self.get_text_value('title')
+        publisher = self.get_text_value('publisher')
+        year = self.get_text_value('year')
+        address = self.get_text_value('address')
+        if address:
+            address = f', {address}'
+        doi = self.get_text_value('doi')
+        if doi:
+            doi = f' doi: {doi}.'
+        url = self.get_text_value('url')
+        if url:
+            url = f' Available from: {url}.'
+
+        if not self.any_values:
+            return ''
+        else:
+            return f'{authors}: {title}, {publisher}{address}, {year}.{doi}{url}'
 
 
 class BibtexBookSection(Form, BibtexFormMixin):
     bibtex_type = 'inbook'
     dropdown_type = 'book section'
+
+    type_field = forms.CharField(widget=widgets.HiddenInput(), initial=bibtex_type)
 
     author = forms.CharField(required=True, label='Authors', help_text=_author_help_text)
     title = forms.CharField(required=True, label='Section title', help_text=_title_help_text.format(kind='section in the book'))
@@ -953,19 +1076,71 @@ class BibtexBookSection(Form, BibtexFormMixin):
     year = forms.CharField(required=True, help_text=_year_help_text)
     pages = forms.CharField(required=True, help_text='Page numbers of the section, given as "start--end".')
     doi = forms.CharField(required=False, help_text=_doi_help_text)
+    url = forms.CharField(required=False, help_text=_url_help_text)
+
+    def text_citation(self):
+        self.any_values = False
+        authors = self.format_authors(self.get_text_value('author'))
+        title = self.get_text_value('title')
+        booktitle = self.get_text_value('booktitle')
+        publisher = self.get_text_value('publisher')
+        year = self.get_text_value('year')
+        pages = self.get_text_value('pages')
+        address = self.get_text_value('address')
+        if address:
+            address = f', {address}'
+        doi = self.get_text_value('doi')
+        if doi:
+            doi = f' doi: {doi}.'
+        url = self.get_text_value('url')
+        if url:
+            url = f' Available from: {url}.'
+
+        if not self.any_values:
+            return ''
+        else:
+            return f'{authors}: {title} in {booktitle}, pp. {pages}. {publisher}{address}, {year}.{doi}{url}'
 
 
 class BibtexMisc(Form, BibtexFormMixin):
     bibtex_type = 'misc'
     dropdown_type = 'other'
 
+    type_field = forms.CharField(widget=widgets.HiddenInput(), initial=bibtex_type)
+
     author = forms.CharField(required=True, label='Authors', help_text=_author_help_text)
-    title = forms.CharField(required=True, label='Section title', help_text=_title_help_text.format(kind='citation'))
+    title = forms.CharField(required=True, label='Title', help_text=_title_help_text.format(kind='citation'))
     year = forms.CharField(required=True, help_text=_year_help_text)
     doi = forms.CharField(required=False, help_text=_doi_help_text)
+    doi_as_url = forms.BooleanField(required=False, label='DOI as URL', initial=True,
+                                    help_text='Check to display DOI as "https://doi.org/...", uncheck to show as '
+                                              '"doi: 10...."')
     howaccessed = forms.CharField(required=False, label='How accessed',
                                   help_text='Information on how someone can access this citation, often a URL. If a '
                                             'DOI is not available, including this is recommended but optional.')
     note = forms.CharField(required=False, help_text='Extra information about this citation, such as when it was '
                                                      'accessed (if an online source) or where and when it was '
                                                      'presented at (if a presentation).')
+
+    def text_citation(self):
+        self.any_values = False
+        authors = self.format_authors(self.get_text_value('author'))
+        title = self.get_text_value('title').rstrip('.')
+        year = self.get_text_value('year')
+        doi = self.get_text_value('doi')
+        if doi:
+            if self['doi_as_url'].value():
+                doi = f' https://doi.org/{doi}.'
+            else:
+                doi = f' doi: {doi}.'
+        access = self.get_text_value('howaccessed')
+        if access:
+            access = f' {access}.'
+        note = self.get_text_value('note')
+        if note:
+            note = f' {note}.'
+
+        if not self.any_values:
+            return ''
+        else:
+            return f'{authors}. {year}. {title}.{doi}{access}{note}'

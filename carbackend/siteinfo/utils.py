@@ -29,3 +29,13 @@ def get_max_release_lag():
     with open(settings.RUNTIME_SETTINGS_FILE) as f:
         tmp = json.load(f)
         return tmp.get('max_release_lag', 366)
+
+
+def grammatical_join(seq, conjunction='and'):
+    if len(seq) == 1:
+        return seq[0]
+    elif len(seq) == 2:
+        return '{} {} {}'.format(seq[0], conjunction, seq[1])
+    else:
+        s = ', '.join(seq[:-1])
+        return '{}, {} {}'.format(s, conjunction, seq[-1])

@@ -12,6 +12,11 @@
             console.log('Ready');
             var type_select = document.getElementById("citation_type");
             changeFormType(type_select.value);
+
+            var submit_buttons = document.getElementsByClassName("submit-bibtex");
+            for (var i=0; i<submit_buttons.length; i++) {
+                submit_buttons[i].disabled = true;
+            }
         });
     </script>
 </head>
@@ -27,15 +32,27 @@
     {% for bibtype, form in form_types.items %}
     <div class="bibtex-form" id="bibtex-form-{{bibtype}}">
         <h2>{{ form.dropdown_type | capfirst }}</h2>
-        <form action="{% url 'siteinfo:editbib' citation site_id %}" method="post">
+        <form action="{% url 'siteinfo:editbib' site_id citation %}" method="post" id="form-{{bibtype}}">
             {% csrf_token %}
             <table class="pretty-table form-table">
                 {{ form.as_table }}
             </table>
 
             <br>
+            <p>Below is how this citation will be rendered on the site information page and in the netCDF and/or DOI
+            metadata. Use the "Regenerate" button to regenerate this from the BibTeX information. The submission
+            button will be disabled until you either regenerate the text or use the "Unlock submit" button to
+            allow submission with the existing text.</p>
+            <textarea id="{{bibtype}}-text-citation" name="{{bibtype}}-text-citation">{{ form.text_citation }}</textarea>
+            <br>
+            <input type="button" name="regenerate" value="Regenerate" class="link-button"
+                   onclick="regenerateTextCitation('{{bibtype}}', '{{text_citation_url}}')">
+            <input type="button" name="unlock-submit" value="Unlock submit" class="link-button"
+                   onclick="unlockSubmitButton('{{bibtype}}')">
+
+            <br>
             <div class="cr">
-            <button type="submit" class="link-button">Submit changes</button>
+                <button type="submit" class="link-button submit-bibtex" id="submit-{{bibtype}}">Submit changes</button>
             </div>
         </form>
     </div>

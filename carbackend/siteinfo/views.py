@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import transaction
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.utils import timezone
 from django.views import View
 from django.shortcuts import render, reverse, HttpResponseRedirect
@@ -328,7 +328,7 @@ class EditSiteInfo(View):
             'netcdf_form': netcdf_form,
             'site_doi_form': site_doi_form,
             'fixed_values': fixed_values,
-            'std_fixed_fields': {'n': len(std_fixed_fields), 'fields': _grammatical_join(std_fixed_fields)},
+            'std_fixed_fields': {'n': len(std_fixed_fields), 'fields': utils.grammatical_join(std_fixed_fields)},
             'long_name': site_info.get('long_name', '??'),
             'site_id': site_id,
             'contact': utils.get_contact(),
@@ -511,17 +511,48 @@ class EditBibtexCitation(View):
         if not _can_edit_site(user, site_id):
             return _redirect_for_lack_of_permission(request, site_id, f'{citation} bibtex')
 
-        context = {
+        context = self._make_context(request, site_id, citation, is_post=False)
+        import pdb; pdb.set_trace()
+        return render(request, 'siteinfo/edit_bibtex.html', context=context)
+
+    def post(self, request, site_id, citation):
+        user = request.user
+        if not _can_edit_site(user, site_id):
+            return _redirect_for_lack_of_permission(request, site_id, f'{citation} bibtex')
+
+        import pdb; pdb.set_trace()
+        bound_forms = forms.BibtexFormMixin.get_form_instances_as_bibtex_type_dict(request.POST)
+        bibtex_type = request.POST['type_field']
+
+        if bound_forms[bibtex_type].is_valid():
+            json_dict = forms.BibtexFormMixin.instance_to_dict(bound_forms[bibtex_type])
+            print(json_dict)
+            url = '{}/?msg=success'.format(reverse('siteinfo:view', args=(site_id,)).rstrip('?').rstrip('/'))
+            return HttpResponseRedirect(url)
+        else:
+            context = self._make_context(request, site_id, citation, is_post=True)
+            # insert the form collection that has had the submitted one validated
+            context['form_types'] = bound_forms
+            return render(request, 'siteinfo/edit_bibtex.html', context=context)
+
+    def _make_context(self, request, site_id, citation, is_post):
+        data = request.POST if is_post else None
+        return {
             'site_id': site_id,
             'citation': citation,
             'citation_name': self._citation_names.get(citation, citation),
-            'form_types': forms.BibtexFormMixin.get_form_instances_as_bibtex_type_dict(),
-            'form_type_mapping': forms.BibtexFormMixin.get_bibtex_dropdown_dict()
+            'form_types': forms.BibtexFormMixin.get_form_instances_as_bibtex_type_dict(data=data),
+            'form_type_mapping': forms.BibtexFormMixin.get_bibtex_dropdown_dict(),
+            'text_citation_url': request.build_absolute_uri(reverse('siteinfo:textcite').rstrip('?'))
         }
 
-        print(context['form_types'].keys())
 
-        return render(request, 'siteinfo/edit_bibtex.html', context=context)
+class GenTextCitation(View):
+    def get(self, request):
+        filled_forms = forms.BibtexFormMixin.get_form_instances_as_bibtex_type_dict(request.GET)
+        bibtex_type = request.GET['type_field']
+        form = filled_forms[bibtex_type]
+        return JsonResponse({'text': form.text_citation()})
 
 
 def _can_edit_site(user, site_id):
@@ -570,12 +601,3 @@ def _redirect_for_lack_of_permission(request, site_id, what, why='permission'):
     url = '{}/?msg={}&site={}&what={}'.format(base_url, reason, site_id, what)
     return HttpResponseRedirect(url)
 
-
-def _grammatical_join(seq, conjunction='and'):
-    if len(seq) == 1:
-        return seq[0]
-    elif len(seq) == 2:
-        return '{} {} {}'.format(seq[0], conjunction, seq[1])
-    else:
-        s = ', '.join(seq[:-1])
-        return '{}, {} {}'.format(s, conjunction, seq[-1])
