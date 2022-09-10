@@ -589,10 +589,18 @@ class EditBibtexCitation(View):
         else:
             data = None
             initial = forms.BibtexFormMixin.load_citation_dict(citation_type=citation, site_id=site_id)
+
+        initial_bibtype = forms.BibtexFormMixin.get_initial_bibtex_type(
+            citation_type=citation,
+            site_id=site_id,
+            post_data=data
+        )
+
         return {
             'site_id': site_id,
             'citation': citation,
             'citation_name': forms.BibtexFormMixin.citation_names.get(citation, citation),
+            'initial_bibtype': initial_bibtype,
             'form_types': forms.BibtexFormMixin.get_form_instances_as_bibtex_type_dict(data=data, initial=initial),
             'form_type_mapping': forms.BibtexFormMixin.get_bibtex_dropdown_dict(),
             'text_citation_url': request.build_absolute_uri(reverse('siteinfo:textcite').rstrip('?'))

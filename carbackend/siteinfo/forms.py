@@ -893,6 +893,7 @@ _url_help_text = 'A URL where the citation may be accessed. Optional.'
 class BibtexFormMixin:
     citation_names = {'siteref': 'site reference', 'dataref': 'data reference'}
     site_info_keys = {'siteref': 'site_reference', 'dataref': 'data_reference'}
+    default_bibtypes = {'siteref': 'article', 'dataref': 'misc'}
 
     @classmethod
     def get_url_part_for_field_name(cls, field_name):
@@ -989,6 +990,17 @@ class BibtexFormMixin:
             return dict()
 
         return bibtex_dir / f'{site_id}_bibtex_citations.json'
+
+    @classmethod
+    def get_initial_bibtex_type(cls, citation_type, site_id, post_data=None):
+        if post_data and 'type_field' in post_data:
+            return post_data['type_field']
+
+        site_dict = cls.load_citation_dict(citation_type, site_id)
+        if 'bibtex_type' in site_dict:
+            return site_dict['bibtex_type']
+
+        return cls.default_bibtypes.get(citation_type, 'article')
 
     def text_citation(self):
         raise NotImplementedError('Cannot produce a citation for the mixin type')

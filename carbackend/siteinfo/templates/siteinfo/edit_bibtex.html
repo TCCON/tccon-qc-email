@@ -9,9 +9,10 @@
     <script src="{% static 'js/bibtex.js' %}"></script>
     <script type='text/javascript'>
         $(document).ready(function() {
-            console.log('Ready');
+            var init_bibtype = '{{initial_bibtype}}';
+            changeFormType(init_bibtype);
             var type_select = document.getElementById("citation_type");
-            changeFormType(type_select.value);
+            type_select.value = init_bibtype;
 
             var submit_buttons = document.getElementsByClassName("submit-bibtex");
             for (var i=0; i<submit_buttons.length; i++) {
@@ -58,6 +59,11 @@
         </form>
     </div>
     {% endfor %}
+        <br>
+        <div class="cr">
+            <form action="{% url 'siteinfo:index' %}"><button type="submit" class="link-button">Back to main</button></form>
+        </div>
+        <br>
     </div>
 </body>
 </html>
