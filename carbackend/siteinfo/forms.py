@@ -3,7 +3,7 @@ from bibtexparser.customization import splitname as splitbibname
 
 from django.conf import settings
 from django import forms
-from django.forms import ModelForm, Form, FileField, TextInput, widgets
+from django.forms import ModelForm, Form, FileField, TextInput, ValidationError, widgets
 from django.forms import formset_factory
 from .models import SiteInfoUpdate, InfoFileLocks
 from . import utils
@@ -1045,6 +1045,14 @@ class BibtexFormMixin:
                 authors[i] = f'{first}{von}{last}{suffix}'
 
         return utils.grammatical_join(authors)
+
+    def clean_doi(self):
+        doi = self.cleaned_data.get('doi')
+        if doi is None:
+            return None
+
+        if not doi.startswith('10.'):
+            raise ValidationError('DOIs must start with "10." - do not include the https://doi.org leader.')
 
 
 class BibtexJournal(Form, BibtexFormMixin):
