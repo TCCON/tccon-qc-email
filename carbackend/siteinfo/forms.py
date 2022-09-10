@@ -1005,14 +1005,46 @@ class BibtexFormMixin:
     def text_citation(self):
         raise NotImplementedError('Cannot produce a citation for the mixin type')
 
-    def get_text_value(self, key, default=''):
+    def get_text_value(self, key, default='', strip_tex=False):
         value = self[key].value()
         if value is None:
             return default
 
         if value:
             self.any_values = True
-        return value
+
+        if strip_tex:
+            return self._strip_tex_math(value)
+        else:
+            return value
+
+    @staticmethod
+    def _strip_tex_math(string):
+        chars = []
+        in_tex = False
+        escaped = False
+        for c in string:
+            if escaped:
+                # If the previous character was a backslash, add the next character to the string regardless of what it
+                # was and take no other special action.
+                chars.append(c)
+                escaped = False
+            elif c == '\\':
+                # Backslashes need to escape the next character, and should not be added to the string
+                escaped = True
+            elif c == '$':
+                # Unescaped dollar signs toggle math mode. We don't want them to show up in the output string
+                in_tex = not in_tex
+            elif in_tex:
+                # When inside Tex math mode, these characters are used for subscripts/superscripts, so do not add
+                # them. We could add in <sub> and <sup> I suppose, but that makes the parsing more complicated.
+                # Plus these are supposed to be plain text.
+                if c not in '_^{}':
+                    chars.append(c)
+            else:
+                # Outside of Tex math mode, add whatever non-special character comes along
+                chars.append(c)
+        return ''.join(chars)
 
     @staticmethod
     def format_authors(authors: str):
@@ -1077,7 +1109,7 @@ class BibtexJournal(Form, BibtexFormMixin):
         self.any_values = False
 
         authors = self.format_authors(self.get_text_value('author'))
-        title = self.get_text_value('title')
+        title = self.get_text_value('title', strip_tex=True)
         journal = self.get_text_value('journal')
         year = self.get_text_value('year')
         volume = self.get_text_value('volume')
@@ -1118,7 +1150,7 @@ class BibtexBook(Form, BibtexFormMixin):
         self.any_values = False
 
         authors = self.format_authors(self.get_text_value('author'))
-        title = self.get_text_value('title')
+        title = self.get_text_value('title', strip_tex=True)
         publisher = self.get_text_value('publisher')
         year = self.get_text_value('year')
         address = self.get_text_value('address')
@@ -1158,7 +1190,7 @@ class BibtexBookSection(Form, BibtexFormMixin):
     def text_citation(self):
         self.any_values = False
         authors = self.format_authors(self.get_text_value('author'))
-        title = self.get_text_value('title')
+        title = self.get_text_value('title', strip_tex=True)
         booktitle = self.get_text_value('booktitle')
         publisher = self.get_text_value('publisher')
         year = self.get_text_value('year')
@@ -1202,7 +1234,7 @@ class BibtexMisc(Form, BibtexFormMixin):
     def text_citation(self):
         self.any_values = False
         authors = self.format_authors(self.get_text_value('author'))
-        title = self.get_text_value('title').rstrip('.')
+        title = self.get_text_value('title', strip_tex=True).rstrip('.')
         year = self.get_text_value('year')
         doi = self.get_text_value('doi')
         if doi:
