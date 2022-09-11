@@ -635,7 +635,9 @@ class GenBibtex(View):
     def get(self, request):
         gen_params = _extract_latex_get_params(request.GET)
         bibtex = forms.BibtexFormMixin.generate_bibtex(**gen_params)
-        return HttpResponse(bibtex.encode('utf8'), content_type='text/plain')
+        response = HttpResponse(bibtex.encode('utf8'), content_type='text/plain')
+        response['Content-Disposition'] = 'filename="tccon_citations.bib"'
+        return response
 
 
 class GenLatexTable(View):
