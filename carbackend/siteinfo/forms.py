@@ -1068,7 +1068,11 @@ class BibtexFormMixin:
                 continue
 
             site_name = unicode_to_latex(site_info.get('long_name', '(undefined)'))
-            location = unicode_to_latex(site_info.get('location', '(undefined)'))
+            if 'short_location' in site_info:
+                location = site_info.get('short_location')
+            else:
+                site_info.get('location', '(undefined)')
+            location = unicode_to_latex(location)
             data_bib_key = cls._make_bibtex_key(site_id=site_id, citation_type='dataref', key_prefix=bibtex_key_prefix)
             if data_bib_key:
                 data_citation = f'\\{citation_cmd}{{{data_bib_key}}}'
