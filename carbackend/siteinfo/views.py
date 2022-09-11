@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import transaction
-from django.http import Http404, JsonResponse
+from django.http import Http404, JsonResponse, HttpResponse
 from django.utils import timezone
 from django.views import View
 from django.shortcuts import render, reverse, HttpResponseRedirect
@@ -9,6 +9,8 @@ from datetime import datetime as dt
 import json
 from pathlib import Path
 import re
+
+from tcconauth.utils import site_id_to_name
 
 from .forms import SiteInfoUpdateForm, SiteInfoUpdateStaffForm, ReleaseFlagUpdateForm
 from .models import SiteInfoUpdate, InfoFileLocks
@@ -615,12 +617,33 @@ class EditBibtexCitation(View):
             EditSiteInfo.write_site_info(update, site_id, selective_keys=True)
 
 
+class GenLatex(View):
+    def get(self, request):
+        context = {'sites': site_id_to_name}
+        return render(request, 'siteinfo/gen_bibtex.html', context=context)
+
+
 class GenTextCitation(View):
     def get(self, request):
         filled_forms = forms.BibtexFormMixin.get_form_instances_as_bibtex_type_dict(request.GET)
         bibtex_type = request.GET['type_field']
         form = filled_forms[bibtex_type]
         return JsonResponse({'text': form.text_citation()})
+
+
+class GenBibtex(View):
+    def get(self, request):
+        gen_params = _extract_latex_get_params(request.GET)
+        bibtex = forms.BibtexFormMixin.generate_bibtex(**gen_params)
+        return HttpResponse(bibtex.encode('utf8'), content_type='text/plain')
+
+
+class GenLatexTable(View):
+    def get(self, request):
+        gen_params = _extract_latex_get_params(request.GET)
+        cite_cmd = request.GET.get('latex-cite-cmd', 'cite')
+        latex = forms.BibtexFormMixin.generate_latex_table(citation_cmd=cite_cmd, **gen_params)
+        return HttpResponse(latex.encode('utf8'), content_type='text/plain')
 
 
 def _can_edit_site(user, site_id):
@@ -669,3 +692,25 @@ def _redirect_for_lack_of_permission(request, site_id, what, why='permission'):
     url = '{}/?msg={}&site={}&what={}'.format(base_url, reason, site_id, what)
     return HttpResponseRedirect(url)
 
+
+def _extract_latex_get_params(get_data):
+    return {
+        'site_ids': _extract_site_ids_to_cite(get_data),
+        'include_site_refs': _extract_include_siteref(get_data),
+        'bibtex_key_prefix': _extract_bibtex_key_prefix(get_data)
+    }
+
+
+def _extract_site_ids_to_cite(get_data):
+    if get_data.get('include-all-sites', '0') == '1':
+        return sorted(site_id_to_name.keys())
+    else:
+        return sorted({v for k, v in get_data.items() if k.startswith('include-site')})
+
+
+def _extract_include_siteref(get_data):
+    return get_data.get('add-siteref', '0') == '1'
+
+
+def _extract_bibtex_key_prefix(get_data):
+    return get_data.get('bibtex-key-prefix', 'tccon-')

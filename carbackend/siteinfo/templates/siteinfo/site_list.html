@@ -16,6 +16,8 @@
        <a href="{% url 'login' %}?next={% url 'siteinfo:index' %}">Log in.</a></p>
     {% endif %}
 
+    <p>To generate BibTeX citations and a LaTeX table of TCCON sites,
+       <a href="{% url 'siteinfo:gentex' %}">click here.</a></p>
 
     <table class="pretty-table">
         {% if has_sites %}

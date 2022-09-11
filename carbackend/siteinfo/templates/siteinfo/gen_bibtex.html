@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Generate citations</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/opstat.css' %}">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="{% static 'js/bibtex.js' %}"></script>
+    <script type='text/javascript'>
+        $(document).ready(function() {
+
+        });
+    </script>
+</head>
+<body>
+    <h1>Generate Tex citations for TCCON data</h1>
+    <div id="div-form-wrap">
+        <h2>Select TCCON sites</h2>
+        <form id="site-list-form" method="get">
+            <div class="grid-container dark-block vertical-pad">
+            {% for site_id, site_name in sites.items %}
+                <div class="grid-item">
+                    <input type="checkbox" class="site-checkbox" name="include-site-{{site_id}}" id="checkbox-include-site-{{site_id}}" value="{{site_id}}">
+                    <label for="checkbox-include-site-{{site_id}}">{{ site_name }} ({{ site_id }})</label>
+                </div>
+            {% endfor %}
+            </div>
+
+            <div class="light-block vertical-pad cr">
+                <input type="button" class="link-button" onclick="changeBoxState('site-checkbox', true)" value="Check all">
+                <input type="button" class="link-button" onclick="changeBoxState('site-checkbox', false)" value="Check none">
+            </div>
+
+            <table class="pretty-table form-table">
+                <tr>
+                    <th><label for="bibtex-key-prefix-textbox">Prefix to include in BibTeX keys</label></th>
+                    <td><input type="text" name="bibtex-key-prefix" id="bibtex-key-prefix-textbox" value="tccon-"></td>
+                </tr>
+                <tr>
+                    <th><label for="latex-cite-cmd-textbox">Latex citation command to use in table, without backslashes</label></th>
+                    <td><input type="text" name="latex-cite-cmd" id="latex-cite-cmd-textbox" value="cite"></td>
+                </tr>
+                <tr>
+                    <th><label for="add-siteref-checkbox">Include the site references as well as data citations?</label></th>
+                    <td><input type="checkbox" name="add-siteref" id="add-siteref-checkbox" value="1"></td>
+                </tr>
+                <tr><td colspan="2" class="cr">
+                    <button type="submit" class="link-button" formaction="{% url 'siteinfo:bibgenerator' %}">Get BibTeX file</button>
+                    <button type="submit" class="link-button" formaction="{% url 'siteinfo:tablegenerator' %}">Get LaTeX table</button>
+                </td></tr>
+            </table>
+
+
+        </form>
+
+
+        <br>
+        <div class="cr">
+            <form action="{% url 'siteinfo:index' %}"><button type="submit" class="link-button">Back to main</button></form>
+        </div>
+        <br>
+    </div>
+</body>
+</html>

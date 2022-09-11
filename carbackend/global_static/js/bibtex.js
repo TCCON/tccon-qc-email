@@ -40,3 +40,17 @@ function lockSubmitButton(bibtype) {
     var submit_button = document.getElementById(`submit-${bibtype}`);
     submit_button.disabled = true;
 }
+
+function changeBoxState(box_class, checked) {
+    var boxes = document.getElementsByClassName(box_class);
+    for(var i=0; i < boxes.length; i++) {
+        boxes[i].checked = checked;
+    }
+}
+
+async function requestBibFile(form_id, url) {
+    let form = document.getElementById(form_id);
+    let data = new FormData(form);
+    let dataObj = Object.fromEntries(data.entries);
+    console.log(dataObj);
+}

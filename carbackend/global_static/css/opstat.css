@@ -66,6 +66,21 @@ td {
     line-height: 1.5625;
 }
 
+.light-block {
+    background-color: #fff8e8;
+    border-top: 2px solid black;
+}
+
+.dark-block {
+    background-color: #ffd15e;
+    border-top: 2px solid black;
+}
+
+.vertical-pad {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
 .pretty-table {
     border-collapse: collapse;
     border-top: 10px;
@@ -273,4 +288,9 @@ td {
 .tooltip:hover .tooltiptext {
   visibility: visible;
   opacity: 1;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
 }
