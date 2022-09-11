@@ -24,6 +24,7 @@ class SiteInfoUpdateForm(ModelForm):
         model = SiteInfoUpdate
         fields = ['release_lag',
                   'location',
+                  'short_location',
                   'contact']
 
     @classmethod
@@ -60,6 +61,7 @@ class SiteInfoUpdateStaffForm(SiteInfoUpdateForm):
                   'data_revision',
                   'release_lag',
                   'location',
+                  'short_location',
                   'contact']
         widgets = {
             'data_doi': TextInput()

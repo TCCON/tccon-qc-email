@@ -19,6 +19,7 @@ class SiteInfoUpdate(models.Model):
     long_name = models.CharField(max_length=32)
     release_lag = models.PositiveIntegerField(help_text='Number of days to withhold data')
     location = models.CharField(max_length=256, help_text='Where the TCCON site is located (e.g. institution, city, state/province, country)')
+    short_location = models.CharField(max_length=32, help_text='A short version of location (32 characters), suitable for tables in papers')
     contact = models.CharField(max_length=256, help_text='Point of contact for the TCCON site. Must be formatted "Name &lt;email&gt;". Separate multiple contacts with a semicolon, e.g. "Name1 &lt;email1&gt;; Name2 &lt;email2&gt;"')
 
     # blank = True needed to allow the form to have no input there
@@ -32,7 +33,7 @@ class SiteInfoUpdate(models.Model):
 
     @staticmethod
     def standard_fields():
-        return ('long_name', 'release_lag', 'location', 'contact', 'site_reference',
+        return ('long_name', 'release_lag', 'location', 'short_location', 'contact', 'site_reference',
                 'data_doi', 'data_reference', 'data_revision')
 
     def to_dict(self):
