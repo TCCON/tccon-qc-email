@@ -1,6 +1,7 @@
 from io import StringIO
 import json
 from bibtexparser.customization import splitname as splitbibname
+from pylatexenc.latexencode import unicode_to_latex
 
 from django.conf import settings
 from django import forms
@@ -1064,8 +1065,8 @@ class BibtexFormMixin:
             except KeyError:
                 continue
 
-            site_name = site_info.get('long_name', '(undefined)')
-            location = site_info.get('location', '(undefined)')
+            site_name = unicode_to_latex(site_info.get('long_name', '(undefined)'))
+            location = unicode_to_latex(site_info.get('location', '(undefined)'))
             data_bib_key = cls._make_bibtex_key(site_id=site_id, citation_type='dataref', key_prefix=bibtex_key_prefix)
             if data_bib_key:
                 data_citation = f'\\{citation_cmd}{{{data_bib_key}}}'
@@ -1115,7 +1116,7 @@ class BibtexFormMixin:
         for field in self.fields.keys():
             if field in fields_to_omit:
                 continue
-            value = self.get_text_value(field)
+            value = self.get_text_value(field, utf2latex=True)
             if value:
                 # Put in two sets of {{ }} to keep capitalization.
                 stream.write(f'    {field} = {{{{{value}}}}},\n')
@@ -1124,7 +1125,7 @@ class BibtexFormMixin:
         if return_string:
             return stream.getvalue()
 
-    def get_text_value(self, key, default='', strip_tex=False):
+    def get_text_value(self, key, default='', strip_tex=False, utf2latex=False):
         value = self[key].value()
         if value is None:
             return default
@@ -1134,6 +1135,8 @@ class BibtexFormMixin:
 
         if strip_tex:
             return self._strip_tex_math(value)
+        elif utf2latex:
+            return unicode_to_latex(value)
         else:
             return value
 

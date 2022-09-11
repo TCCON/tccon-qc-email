@@ -619,7 +619,7 @@ class EditBibtexCitation(View):
 
 class GenLatex(View):
     def get(self, request):
-        context = {'sites': site_id_to_name}
+        context = {'sites': {k: v for k, v in site_id_to_name.items() if k not in settings.SITE_IDS_SKIP_FOR_CITATIONS}}
         return render(request, 'siteinfo/gen_bibtex.html', context=context)
 
 

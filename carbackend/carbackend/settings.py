@@ -301,6 +301,9 @@ elif VM == Vms.TCCONDATA:
     LOGIN_URL = '/metadata/accounts/login/'
     LOGIN_REDIRECT_URL = '/metadata/siteinfo/'
 
+# This defined which sites should never be included in the citations list because they never went online
+SITE_IDS_SKIP_FOR_CITATIONS = ('ht', 'yk')
+
 if VM == Vms.TCCONDATA:
     # This is the path to the .json file that has the TCCON site metadata (like release lag, citation, etc)
     # The directory it is in needs to be writable by the Django process so that backups of this file can be
