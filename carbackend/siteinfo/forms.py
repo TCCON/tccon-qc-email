@@ -892,6 +892,10 @@ _doi_help_text = ('Digital object identifier for this paper starting with the "1
 _url_help_text = 'A URL where the citation may be accessed. Optional.'
 
 
+def _bibtex_text_area_widget():
+    return forms.Textarea(attrs={'rows': 4, 'cols': 160})
+
+
 class BibtexFormMixin:
     citation_names = {'siteref': 'site reference', 'dataref': 'data reference'}
     site_info_keys = {'siteref': 'site_reference', 'dataref': 'data_reference'}
@@ -1208,8 +1212,10 @@ class BibtexJournal(Form, BibtexFormMixin):
 
     type_field = forms.CharField(widget=widgets.HiddenInput(), initial=bibtex_type)
 
-    author = forms.CharField(required=True, label='Authors', help_text=_author_help_text)
-    title = forms.CharField(required=True, help_text=_title_help_text.format(kind='article'))
+    author = forms.CharField(required=True, label='Authors', help_text=_author_help_text,
+                             widget=_bibtex_text_area_widget())
+    title = forms.CharField(required=True, help_text=_title_help_text.format(kind='article'),
+                            widget=_bibtex_text_area_widget())
     journal = forms.CharField(required=True, label='Journal Abbreviation',
                               help_text='The official abbreviation for the journal, e.g. "Atmos. Meas. Tech."')
     year = forms.CharField(required=True, help_text=_year_help_text)
@@ -1251,8 +1257,10 @@ class BibtexBook(Form, BibtexFormMixin):
 
     type_field = forms.CharField(widget=widgets.HiddenInput(), initial=bibtex_type)
 
-    author = forms.CharField(required=True, label='Authors', help_text=_author_help_text)
-    title = forms.CharField(required=True, help_text=_title_help_text.format(kind='book'))
+    author = forms.CharField(required=True, label='Authors', help_text=_author_help_text,
+                             widget=_bibtex_text_area_widget())
+    title = forms.CharField(required=True, help_text=_title_help_text.format(kind='book'),
+                            widget=_bibtex_text_area_widget())
     publisher = forms.CharField(required=True, help_text="Name of the book's publisher")
     address = forms.CharField(required=False, label='Publisher address',
                               help_text='General address of the publisher, e.g. "New York, NY, USA". If there are '
@@ -1290,8 +1298,11 @@ class BibtexBookSection(Form, BibtexFormMixin):
 
     type_field = forms.CharField(widget=widgets.HiddenInput(), initial=bibtex_type)
 
-    author = forms.CharField(required=True, label='Authors', help_text=_author_help_text)
-    title = forms.CharField(required=True, label='Section title', help_text=_title_help_text.format(kind='section in the book'))
+    author = forms.CharField(required=True, label='Authors', help_text=_author_help_text,
+                             widget=_bibtex_text_area_widget())
+    title = forms.CharField(required=True, label='Section title',
+                            help_text=_title_help_text.format(kind='section in the book'),
+                            widget=_bibtex_text_area_widget())
     booktitle = forms.CharField(required=True, label='Book title', help_text=_title_help_text.format(kind='book itself'))
     publisher = forms.CharField(required=True, help_text="Name of the book's publisher")
     address = forms.CharField(required=False, label='Publisher address',
@@ -1332,8 +1343,10 @@ class BibtexMisc(Form, BibtexFormMixin):
 
     type_field = forms.CharField(widget=widgets.HiddenInput(), initial=bibtex_type)
 
-    author = forms.CharField(required=True, label='Authors', help_text=_author_help_text)
-    title = forms.CharField(required=True, label='Title', help_text=_title_help_text.format(kind='citation'))
+    author = forms.CharField(required=True, label='Authors', help_text=_author_help_text,
+                             widget=_bibtex_text_area_widget())
+    title = forms.CharField(required=True, label='Title', help_text=_title_help_text.format(kind='citation'),
+                            widget=_bibtex_text_area_widget())
     year = forms.CharField(required=True, help_text=_year_help_text)
     doi = forms.CharField(required=False, help_text=_doi_help_text)
     doi_as_url = forms.BooleanField(required=False, label='DOI as URL', initial=True,
