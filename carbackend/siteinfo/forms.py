@@ -605,14 +605,14 @@ class RelatedIdentifierForm(MetadataAbstractForm):
 class FundingReferenceForm(MetadataAbstractForm):
     FUND_NONE = '-'
     FUND_ISNI = 'ISNI'
-    FUND_GRID = 'GRID'
+    FUND_ROR = 'ROR'
     FUND_CROSSREF = 'Crossref Funder'
     FUND_OTHER = 'Other'
 
     funder_identifier_type = forms.ChoiceField(initial='-', choices=[
         (FUND_NONE, '-'),
         (FUND_ISNI, 'ISNI'),
-        (FUND_GRID, 'GRID'),
+        (FUND_ROR, 'ROR'),
         (FUND_CROSSREF, 'Crossref Funder'),
         (FUND_OTHER, 'Other')
     ])
@@ -629,7 +629,7 @@ class FundingReferenceForm(MetadataAbstractForm):
         label='Funder identifier (optional)',
         required=False,
         widget=forms.TextInput(attrs={
-            'placeholder': 'Enter funder identifier (e.g. GRID or Crossref string) here',
+            'placeholder': 'Enter funder identifier (e.g. ROR or Crossref string) here',
             'style': f'width:{_base_field_width};'
         })
     )
@@ -663,11 +663,24 @@ class FundingReferenceForm(MetadataAbstractForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        no_id_type = cleaned_data.get('funder_identifier_type', self.FUND_NONE) == self.FUND_NONE
+        funder_id_type = cleaned_data.get('funder_identifier_type', self.FUND_NONE)
+        no_id_type = funder_id_type == self.FUND_NONE
         no_id = cleaned_data.get('funder_identifier', '') in (None, '')
         if no_id_type != no_id:
             raise forms.ValidationError('Must provide both or neither of the identifier and identifier type. '
                                         '(Make the type equal "-" if no identifier desired.', 'xor_id_and_type')
+
+        if funder_id_type == self.FUND_ROR:
+            funder_id = cleaned_data.get('funder_identifier')
+            if not funder_id and cleaned_data.get('funder_name'):
+                self.add_error('funder_identifier', 'Required if a funder name is given')
+            elif funder_id.lower() not in {'na', 'n/a'}:
+                r = requests.get(f'https://api.ror.org/organizations/{funder_id}')
+                if not r.ok:
+                    self.add_error('funder_identifier', 'Could not find this ID on ror.org.')
+            else:
+                # ensure a standardized value
+                self.cleaned_data['funder_identifier'] = 'N/A'
 
     def to_dict(self) -> dict:
         def n2s(v):
