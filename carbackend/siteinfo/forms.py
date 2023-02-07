@@ -1068,9 +1068,15 @@ class BibtexFormMixin:
     @classmethod
     def generate_latex_table(cls, site_ids, bibtex_key_prefix='tccon-', citation_cmd='cite', include_site_refs=False):
         if include_site_refs:
-            table_rows = ['Site ID & Site Name & Location & Data Citation & Site Reference']
+            table_rows = [
+                r'\begin{tabular}{lllll}',
+                'Site ID & Site Name & Location & Data Citation & Site Reference'
+            ]
         else:
-            table_rows = ['Site ID & Site Name & Location & Data Citation']
+            table_rows = [
+                r'\begin{tabular}{llll}'
+                'Site ID & Site Name & Location & Data Citation'
+            ]
 
         all_site_info = InfoFileLocks.read_json_file(settings.SITE_INFO_FILE)
 
@@ -1102,6 +1108,7 @@ class BibtexFormMixin:
             else:
                 table_rows.append(f'{site_id} & {site_name} & {location} & {data_citation}')
 
+        table_rows.append(r'\end{tabular}')
         table = ' \\\\\n'.join(table_rows)
         return f'{cls._gen_string()}\n{table}'
 
@@ -1136,7 +1143,10 @@ class BibtexFormMixin:
             if field in fields_to_omit:
                 continue
             value = self.get_text_value(field, utf2latex=True)
-            if value:
+            if value and field == 'author':
+                # Don't include the extra brackets for author fields or BibTeX can't parse the authors correctly
+                stream.write(f'    {field} = {{{value}}},\n')
+            elif value:
                 # Put in two sets of {{ }} to keep capitalization.
                 stream.write(f'    {field} = {{{{{value}}}}},\n')
         stream.write('}')
@@ -1258,7 +1268,7 @@ class BibtexJournal(Form, BibtexFormMixin):
         volume = self.get_text_value('volume')
         number = self.get_text_value('number')
         if number:
-            number = f' {number}'
+            number = f' ({number})'
         pages = self.get_text_value('pages')
         doi = self.get_text_value('doi')
         if doi:

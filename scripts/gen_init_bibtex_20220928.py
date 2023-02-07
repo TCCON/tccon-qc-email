@@ -1,7 +1,11 @@
+from argparse import ArgumentParser
 import json
+from pylatexenc.latexencode import unicode_to_latex
+from pathlib import Path
 import re
 
-def make_bibtex_entries(sites='all'):
+def make_bibtex_entries(site_info_file, output_dir, sites='all'):
+    output_dir = Path(output_dir)
     if sites == 'all':
         filter_sites = False
         sites = set()
@@ -10,67 +14,40 @@ def make_bibtex_entries(sites='all'):
         sites = set(sites.split(','))
 
     # TODO: use the Django settings
-    with open('/var/www/tccon-metadata/site_info.json') as f:
+    with open(site_info_file) as f:
         all_site_info = json.load(f)
 
-    bibtex_strings = []
     for site_id, site_info in all_site_info.items():
         if filter_sites and site_id not in sites:
             continue
 
-        bibtex_key = make_bibtex_key(site_id, site_info)
+        bibtex_json = {'dataref': dict(bibtex_type='misc', doi_as_url=True, howaccessed='', note='')}
 
         citation = site_info.get('data_reference', '')
         if len(citation) == 0:
-            bibtex_strings.append(f'% Site with id "{site_id}" has not provided a data reference. Please ask them to do so!')
             continue
 
         try:
-            bibtex_strings.append(parse_data_citation(citation, bibtex_key))
-        except:
-            bibtex_strings.append(f'% Sorry, was not able to produce a citation for site "{site_id}"')
-
-    return '\n\n'.join(bibtex_strings)
-
-
-def make_bibtex_table(sites='all', citation_cmd='citet'):
-    if sites == 'all':
-        filter_sites = False
-        sites = set()
-    else:
-        filter_sites = True
-        sites = set(sites.split(','))
-
-    table_rows = ['Site ID & Site Name & Location & Data Citation']
-
-    # TODO: use the Django settings
-    with open('/var/www/tccon-metadata/site_info.json') as f:
-        all_site_info = json.load(f)
-
-    for site_id, site_info in all_site_info.items():
-        if filter_sites and site_id not in sites:
+            bibtex_json['dataref'].update(parse_data_citation(citation, bibtex_key=None))
+        except Exception as e:
+            print(f'Sorry, was not able to produce a citation for site "{site_id}". Error was "{e}"')
             continue
 
-        site_name = site_info.get('long_name', '(undefined)')
-        location = site_info.get('location', '(undefined)')
-        bib_key = make_bibtex_key(site_id, site_info)
-        citation = f'\\{citation_cmd}{{{bib_key}}}'
-        table_rows.append(f'{site_id} & {site_name} & {location} & {citation}')
+        with open(output_dir / f'{site_id}_bibtex_citations.json', 'w') as f:
+            json.dump(bibtex_json, f, indent=2, ensure_ascii=False)
 
-    return ' \\\\\n'.join(table_rows)
-    
-
-def parse_data_citation(citation_str, bibtex_key, as_dict=False):
+def parse_data_citation(citation_str, bibtex_key, as_dict=True):
     # Assume format: "Authors. Year. Title doi"
     regex = re.match(r'(?P<authors>.+)\. (?P<year>\d{4}). (?P<title>.+) ((http|https)://)?(doi\.org/)?(?P<doi>10\..+)$', citation_str)
     info = {
-        'author': parse_authors(regex.group('authors')),
+        'author': parse_authors(unicode_to_latex(regex.group('authors'))),
         'year': regex.group('year'),
         'title': regex.group('title'),
         'doi': regex.group('doi')
     }
 
     if as_dict:
+        info['author'] = ' and '.join(info['author'])
         return info
     else:
         return f"""@misc{{{bibtex_key},
@@ -79,13 +56,6 @@ def parse_data_citation(citation_str, bibtex_key, as_dict=False):
     year = {{{info["year"]}}},
     doi = {{{info["doi"]}}}
 }}"""
-
-
-def make_bibtex_key(site_id, site_info):
-    try:
-        return f"{site_info['long_name']}_data"
-    except KeyError:
-        return f'{site_id}_tccon_data'
 
 
 def parse_authors(authors):
@@ -110,5 +80,9 @@ def parse_authors(authors):
 
 
 if __name__ == '__main__':
-    print(make_bibtex_entries())
-    # print(make_bibtex_table())
+    p = ArgumentParser('Generate BibTeX JSON files with the data references based on an existing site info file')
+    p.add_argument('site_info_file', help='The site_info.json file to read the original citations from.')
+    p.add_argument('output_dir', help='The directory to output the JSON files to')
+
+    clargs = vars(p.parse_args())
+    make_bibtex_entries(**clargs)
