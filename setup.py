@@ -9,7 +9,8 @@ if __name__ == '__main__':
             version='1.0.0',
             url='https://github.com/WennbergLab/tccon-qc-email',
             install_requires=[
-                    'tomli>=1.0.4'
+                    'tomli>=1.0.4',
+                    'requests',
                 ],
             packages=['qc_email'],
             python_requires='>=3.7'
