@@ -197,8 +197,6 @@ def send_email_from_config(cfg_file, site_id, attachment, nc_file, plot_url=None
     # Get message parts that we'll need regardless of whether we're sending
     # using smtplib or an external program
 
-    to_addr = cfg['email']['to']
-    from_addr = cfg['email']['from']
     body = cfg['email'].get('body', _default_body)
 
     # We need to make sure that the plot_url makes it into the body of the email even if
@@ -224,7 +222,7 @@ def send_email_from_config(cfg_file, site_id, attachment, nc_file, plot_url=None
             # One problem I hit was permissions - the QC plotting user didn't have permission to
             # run the Django script, and I couldn't make it work with a setuid bit.
             print(f'Unable to obtain reviewers: Error was:\n{result.stderr}', file=sys.stderr)
-        
+
     if reviewers is None:
         reviewers = {'editor': '?', 'reviewer1': '?', 'reviewer2': '?'}
 
@@ -235,7 +233,14 @@ def send_email_from_config(cfg_file, site_id, attachment, nc_file, plot_url=None
         plot_url=plot_url,
         **reviewers
     )
+    custom_email_from_config(cfg_file=cfg_file, site_id=site_id, body=body, attachment=attachment, dry_run=dry_run)
 
+
+def custom_email_from_config(cfg_file, site_id, body, attachment, dry_run=False):
+    with open(cfg_file) as f:
+        cfg = tomli.load(f)
+    to_addr = cfg['email']['to']
+    from_addr = cfg['email']['from']
     if cfg['email']['subject_from_site_id']:
         try:
             subject = '[#{}]'.format(cfg['email']['sites'][site_id])
