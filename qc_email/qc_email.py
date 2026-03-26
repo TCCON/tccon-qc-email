@@ -6,6 +6,7 @@ import shlex
 import smtplib
 from subprocess import run
 import sys
+from textwrap import fill
 import tomli
 
 from email.mime.multipart import MIMEMultipart
@@ -181,6 +182,23 @@ def send_email_ext(subject, body, send_from, send_to, attachment, cfg, dry_run=F
         ))
 
 
+def send_mock_email(subject, body, send_from, send_to, attachment=None):
+    width = 70
+    def print_fill(msg, subsequent_indent='    ', **kwargs):
+        print(fill(msg, subsequent_indent=subsequent_indent, width=width, **kwargs))
+    print(' Begin mock email '.center(width, '='), end='\n\n')
+    print_fill(f'From: {send_from}')
+    print_fill(f'To: {send_to}')
+    print_fill(f'Subject: {subject}')
+    if attachment is not None:
+        print_fill(f'Attachment: {attachment}')
+    print('Body:')
+    for line in body.splitlines():
+        print_fill(line, initial_indent='    ')
+    print('')
+    print(' End mock email '.center(width, '='), end='\n\n')
+
+
 def send_email_from_config(cfg_file, site_id, attachment, nc_file, plot_url=None, dry_run=False):
     """Send an email using a config dictionary to determine how to send it.
 
@@ -241,6 +259,7 @@ def custom_email_from_config(cfg_file, site_id, body, attachment, dry_run=False)
         cfg = tomli.load(f)
     to_addr = cfg['email']['to']
     from_addr = cfg['email']['from']
+
     if cfg['email']['subject_from_site_id']:
         try:
             subject = '[#{}]'.format(cfg['email']['sites'][site_id])
@@ -251,7 +270,15 @@ def custom_email_from_config(cfg_file, site_id, body, attachment, dry_run=False)
     else:
         subject = cfg['email']['subject']
 
-    if cfg['server']['use_external_program']:
+    if cfg['email'].get('mock', False):
+        send_mock_email(
+            subject=subject,
+            body=body,
+            send_from=from_addr,
+            send_to=to_addr,
+            attachment=attachment
+        )
+    elif cfg['server']['use_external_program']:
         send_email_ext(
             subject=subject,
             body=body,
