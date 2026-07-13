@@ -224,26 +224,7 @@ def send_email_from_config(cfg_file, site_id, attachment, nc_file, plot_url=None
 
     # Also if there is a command to do so, get the editor and reviewers for this site
     reviewer_cmd = cfg['email'].get('reviewer_cmd', None)
-    reviewers = None
-    if reviewer_cmd and reviewer_cmd == '__internal__':
-        response = requests.get(f'https://tccondata.org/metadata/qcform/api/v1/getreviewers/{site_id}')
-        if response.status_code == 200:
-            reviewers = json.loads(response.content)
-    elif reviewer_cmd:
-        reviewer_cmd = shlex.split(reviewer_cmd)
-        reviewer_cmd.append(site_id)
-        # If this fails, 
-        result = run(reviewer_cmd, capture_output=True)
-        if result.returncode == 0:
-            reviewers = json.loads(result.stdout)
-        else:
-            # One problem I hit was permissions - the QC plotting user didn't have permission to
-            # run the Django script, and I couldn't make it work with a setuid bit.
-            print(f'Unable to obtain reviewers: Error was:\n{result.stderr}', file=sys.stderr)
-
-    if reviewers is None:
-        reviewers = {'editor': '?', 'reviewer1': '?', 'reviewer2': '?'}
-
+    reviewers = get_reviewers(site_id, reviewer_cmd=reviewer_cmd)
 
     body = body.format(
         date=datetime.now(timezone.utc).astimezone().strftime('%Y-%m-%d %H:%M %Z'),
@@ -298,3 +279,26 @@ def custom_email_from_config(cfg_file, site_id, body, attachment, dry_run=False)
             auth = smtp_info.get('requires_auth', True)
         send_email(subject=subject, body=body, send_from=from_addr, send_to=to_addr, attachment=attachment,
                    smtp_args=smtp_args, authenticate=auth, dry_run=dry_run)
+
+
+def get_reviewers(site_id, reviewer_cmd='__internal__'):
+    reviewers = None
+    if reviewer_cmd and reviewer_cmd == '__internal__':
+        response = requests.get(f'https://tccondata.org/metadata/qcform/api/v1/getreviewers/{site_id}')
+        if response.status_code == 200:
+            reviewers = json.loads(response.content)
+    elif reviewer_cmd:
+        reviewer_cmd = shlex.split(reviewer_cmd)
+        reviewer_cmd.append(site_id)
+        # If this fails, 
+        result = run(reviewer_cmd, capture_output=True)
+        if result.returncode == 0:
+            reviewers = json.loads(result.stdout)
+        else:
+            # One problem I hit was permissions - the QC plotting user didn't have permission to
+            # run the Django script, and I couldn't make it work with a setuid bit.
+            print(f'Unable to obtain reviewers: Error was:\n{result.stderr}', file=sys.stderr)
+
+    if reviewers is None:
+        reviewers = {'editor': '?', 'reviewer1': '?', 'reviewer2': '?'}
+    return reviewers
