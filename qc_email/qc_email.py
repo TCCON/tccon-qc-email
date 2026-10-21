@@ -6,6 +6,7 @@ import shlex
 import smtplib
 from subprocess import run
 import sys
+from textwrap import fill
 import tomli
 
 from email.mime.multipart import MIMEMultipart
@@ -181,6 +182,23 @@ def send_email_ext(subject, body, send_from, send_to, attachment, cfg, dry_run=F
         ))
 
 
+def send_mock_email(subject, body, send_from, send_to, attachment=None):
+    width = 70
+    def print_fill(msg, subsequent_indent='    ', **kwargs):
+        print(fill(msg, subsequent_indent=subsequent_indent, width=width, **kwargs))
+    print(' Begin mock email '.center(width, '='), end='\n\n')
+    print_fill(f'From: {send_from}')
+    print_fill(f'To: {send_to}')
+    print_fill(f'Subject: {subject}')
+    if attachment is not None:
+        print_fill(f'Attachment: {attachment}')
+    print('Body:')
+    for line in body.splitlines():
+        print_fill(line, initial_indent='    ')
+    print('')
+    print(' End mock email '.center(width, '='), end='\n\n')
+
+
 def send_email_from_config(cfg_file, site_id, attachment, nc_file, plot_url=None, dry_run=False):
     """Send an email using a config dictionary to determine how to send it.
 
@@ -197,8 +215,6 @@ def send_email_from_config(cfg_file, site_id, attachment, nc_file, plot_url=None
     # Get message parts that we'll need regardless of whether we're sending
     # using smtplib or an external program
 
-    to_addr = cfg['email']['to']
-    from_addr = cfg['email']['from']
     body = cfg['email'].get('body', _default_body)
 
     # We need to make sure that the plot_url makes it into the body of the email even if
@@ -208,9 +224,67 @@ def send_email_from_config(cfg_file, site_id, attachment, nc_file, plot_url=None
 
     # Also if there is a command to do so, get the editor and reviewers for this site
     reviewer_cmd = cfg['email'].get('reviewer_cmd', None)
+    reviewer_key = cfg['email'].get('reviewer_key', None)
+    reviewers = get_reviewers(site_id, reviewer_cmd=reviewer_cmd, reviewer_key=reviewer_key)
+
+    body = body.format(
+        date=datetime.now(timezone.utc).astimezone().strftime('%Y-%m-%d %H:%M %Z'),
+        basename=os.path.basename(nc_file),
+        plot_url=plot_url,
+        **reviewers
+    )
+    custom_email_from_config(cfg_file=cfg_file, site_id=site_id, body=body, attachment=attachment, dry_run=dry_run)
+
+
+def custom_email_from_config(cfg_file, site_id, body, attachment, dry_run=False):
+    with open(cfg_file) as f:
+        cfg = tomli.load(f)
+    to_addr = cfg['email']['to']
+    from_addr = cfg['email']['from']
+
+    if cfg['email']['subject_from_site_id']:
+        try:
+            subject = '[#{}]'.format(cfg['email']['sites'][site_id])
+        except KeyError:
+            raise KeyError('Unable to find a subject line for site ID {} in the config file {}'.format(
+                site_id, cfg_file
+            ))
+    else:
+        subject = cfg['email']['subject']
+
+    if cfg['email'].get('mock', False):
+        send_mock_email(
+            subject=subject,
+            body=body,
+            send_from=from_addr,
+            send_to=to_addr,
+            attachment=attachment
+        )
+    elif cfg['server']['use_external_program']:
+        send_email_ext(
+            subject=subject,
+            body=body,
+            send_from=from_addr,
+            send_to=to_addr,
+            attachment=attachment,
+            cfg=cfg['server']['program'],
+            dry_run=dry_run
+        )
+    else:
+        smtp_info = cfg['server']['smtp']
+        smtp_args = [smtp_info['smtp_address'], smtp_info['port']]
+        # Not tested!
+        if 'password' in smtp_info:
+            auth = smtp_info['password']
+        else:
+            auth = smtp_info.get('requires_auth', True)
+        send_email(subject=subject, body=body, send_from=from_addr, send_to=to_addr, attachment=attachment,
+                   smtp_args=smtp_args, authenticate=auth, dry_run=dry_run)
+
+
+def get_reviewers(site_id, reviewer_cmd='__internal__', reviewer_key=None):
     reviewers = None
     if reviewer_cmd and reviewer_cmd == '__internal__':
-        reviewer_key = cfg['email'].get('reviewer_key', None)
         if reviewer_key is None:
             # This key must be obtained by running manage.sh create_api_key in the qcform/metadata web portal repo
             print('Unable to obtain reviewers; email.reviewer_key not provided in the config', file=sys.stderr)
@@ -235,42 +309,4 @@ def send_email_from_config(cfg_file, site_id, attachment, nc_file, plot_url=None
 
     if reviewers is None:
         reviewers = {'editor': '?', 'reviewer1': '?', 'reviewer2': '?'}
-
-
-    body = body.format(
-        date=datetime.now(timezone.utc).astimezone().strftime('%Y-%m-%d %H:%M %Z'),
-        basename=os.path.basename(nc_file),
-        plot_url=plot_url,
-        **reviewers
-    )
-
-    if cfg['email']['subject_from_site_id']:
-        try:
-            subject = '[#{}]'.format(cfg['email']['sites'][site_id])
-        except KeyError:
-            raise KeyError('Unable to find a subject line for site ID {} in the config file {}'.format(
-                site_id, cfg_file
-            ))
-    else:
-        subject = cfg['email']['subject']
-
-    if cfg['server']['use_external_program']:
-        send_email_ext(
-            subject=subject,
-            body=body,
-            send_from=from_addr,
-            send_to=to_addr,
-            attachment=attachment,
-            cfg=cfg['server']['program'],
-            dry_run=dry_run
-        )
-    else:
-        smtp_info = cfg['server']['smtp']
-        smtp_args = [smtp_info['smtp_address'], smtp_info['port']]
-        # Not tested!
-        if 'password' in smtp_info:
-            auth = smtp_info['password']
-        else:
-            auth = smtp_info.get('requires_auth', True)
-        send_email(subject=subject, body=body, send_from=from_addr, send_to=to_addr, attachment=attachment,
-                   smtp_args=smtp_args, authenticate=auth, dry_run=dry_run)
+    return reviewers
