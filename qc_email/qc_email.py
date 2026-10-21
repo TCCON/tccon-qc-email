@@ -210,9 +210,17 @@ def send_email_from_config(cfg_file, site_id, attachment, nc_file, plot_url=None
     reviewer_cmd = cfg['email'].get('reviewer_cmd', None)
     reviewers = None
     if reviewer_cmd and reviewer_cmd == '__internal__':
-        response = requests.get(f'https://tccondata.org/metadata/qcform/api/v1/getreviewers/{site_id}')
-        if response.status_code == 200:
-            reviewers = json.loads(response.content)
+        reviewer_key = cfg['email'].get('reviewer_key', None)
+        if reviewer_key is None:
+            # This key must be obtained by running manage.sh create_api_key in the qcform/metadata web portal repo
+            print('Unable to obtain reviewers; email.reviewer_key not provided in the config', file=sys.stderr)
+        else:
+            response = requests.get(
+                f'https://tccondata.org/metadata/qcform/api/v1/getreviewers/{site_id}',
+                headers={'X-Api-Key': reviewer_key}
+            )
+            if response.status_code == 200:
+                reviewers = json.loads(response.content)
     elif reviewer_cmd:
         reviewer_cmd = shlex.split(reviewer_cmd)
         reviewer_cmd.append(site_id)
@@ -224,7 +232,7 @@ def send_email_from_config(cfg_file, site_id, attachment, nc_file, plot_url=None
             # One problem I hit was permissions - the QC plotting user didn't have permission to
             # run the Django script, and I couldn't make it work with a setuid bit.
             print(f'Unable to obtain reviewers: Error was:\n{result.stderr}', file=sys.stderr)
-        
+
     if reviewers is None:
         reviewers = {'editor': '?', 'reviewer1': '?', 'reviewer2': '?'}
 
